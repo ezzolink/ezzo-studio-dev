@@ -3,7 +3,7 @@ import { useTheme } from '../hooks/useTheme'
 import { useUpdate } from '../hooks/useUpdate'
 import UpdateModal from './UpdateModal'
 
-const BUILD_DATE = '2026-06-25'
+const BUILD_DATE = '2026-07-22'
 
 const IconMoon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

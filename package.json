@@ -1,6 +1,6 @@
 {
   "name": "ezzo-work-local",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "EZZO Work Local - Collaborative IDE for local network",
   "main": "dist-electron/main.js",
   "author": "EZZO",
