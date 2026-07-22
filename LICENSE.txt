@@ -1,0 +1,29 @@
+EZZO WORK LOCAL — CONTRATO DE LICENÇA DE UTILIZADOR FINAL
+===========================================================
+
+Copyright © 2026 EZZO. Todos os direitos reservados.
+
+Este software é fornecido "tal como está", sem garantias expressas ou implícitas.
+
+Ao instalar o EZZO Work Local, o utilizador concorda com os seguintes termos:
+
+1. UTILIZAÇÃO PERMITIDA
+   O software pode ser utilizado para fins pessoais e comerciais internos.
+
+2. RESTRIÇÕES
+   É proibida a redistribuição, cópia ou modificação do software sem
+   autorização expressa da EZZO.
+
+3. ISENÇÃO DE RESPONSABILIDADE
+   A EZZO não se responsabiliza por quaisquer danos directos ou indirectos
+   resultantes da utilização deste software.
+
+4. ACTUALIZAÇÕES
+   A EZZO pode disponibilizar actualizações que melhoram a segurança e
+   funcionalidade. Recomenda-se manter o software actualizado.
+
+5. SUPORTE
+   Para suporte, contacte: suporte@ezzo.dev
+   Website: https://ezzo.dev
+
+Ao clicar em "Aceito os termos", confirma que leu e aceita este contrato.
