@@ -842,7 +842,12 @@ async function analyzeProject(rootPath: string) {
     if (go.length) dependencies.go = go
   } catch { /* */ }
 
-  return { totalFiles, totalDirs, totalBytes, totalLines, languages, dependencies, todos, recent: topRecent }
+  let nodeModulesInstalled = false
+  try {
+    nodeModulesInstalled = fs.existsSync(path.join(rootPath, 'node_modules'))
+  } catch { /* */ }
+
+  return { totalFiles, totalDirs, totalBytes, totalLines, languages, dependencies, todos, recent: topRecent, nodeModulesInstalled }
 }
 
 ipcMain.handle('analyze-project', async (_e, rootPath: string) => {

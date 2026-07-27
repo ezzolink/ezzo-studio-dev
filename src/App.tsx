@@ -530,6 +530,10 @@ export default function App() {
           error={analysisError}
           onClose={() => setAnalysisOpen(false)}
           onRefresh={handleAnalyze}
+          onOpenFileAtLine={(filePath, _line) => {
+            handleFileOpen({ name: filePath.split(/[/\\]/).pop()!, path: filePath, type: 'file' })
+            setAnalysisOpen(false)
+          }}
         />
       )}
     </div>
