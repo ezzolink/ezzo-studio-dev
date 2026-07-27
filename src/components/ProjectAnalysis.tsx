@@ -70,45 +70,54 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
     }
   }, [])
 
-  const runInstallCommand = (cmd: string, targetName = 'Todas as Dependências') => {
+  const runInstallCommand = async (pkgName?: string) => {
     if (installing) return
+    const targetName = pkgName ? pkgName.replace(' (dev)', '') : 'Todas as Dependências'
     setInstalling(true)
-    setInstallProgress(5)
+    setInstallProgress(10)
     setInstallTarget(targetName)
     setInstallSuccessMsg('')
 
-    // Send command to Terminal
-    window.dispatchEvent(new CustomEvent('run-task', { detail: cmd }))
-
-    // Animate real-time progress bar smoothly from 5% to ~95%
-    let currentPct = 5
+    // Smooth real-time progress simulation during process execution
+    let currentPct = 10
     if (progressTimerRef.current) clearInterval(progressTimerRef.current)
     
     progressTimerRef.current = setInterval(() => {
-      currentPct += Math.floor(Math.random() * 8) + 4
-      if (currentPct >= 95) {
-        currentPct = 95
+      currentPct += Math.floor(Math.random() * 6) + 3
+      if (currentPct >= 92) {
+        currentPct = 92
         if (progressTimerRef.current) clearInterval(progressTimerRef.current)
       }
       setInstallProgress(currentPct)
-    }, 350)
+    }, 400)
 
-    // Complete after process runtime feedback (6s)
-    setTimeout(() => {
+    try {
+      // Real backend child process execution!
+      const res = await window.api.execNpmInstall?.(rootPath, pkgName ? targetName : undefined)
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)
-      setInstallProgress(100)
-      setTimeout(() => {
+
+      if (res && res.success === false) {
         setInstalling(false)
-        setInstallSuccessMsg(`✅ ${targetName} instaladas com sucesso!`)
-        onRefresh()
-        
-        // Desktop Notification (works outside app window)
-        sendDesktopNotification(
-          'EZZO Studio Dev',
-          `As dependências (${targetName}) foram instaladas com sucesso no repositório!`
-        )
-      }, 500)
-    }, 6500)
+        setInstallSuccessMsg(`❌ Erro ao instalar ${targetName}: ${res.error || 'Falha na execução'}`)
+      } else {
+        setInstallProgress(100)
+        setTimeout(() => {
+          setInstalling(false)
+          setInstallSuccessMsg(`✅ ${targetName} instaladas com sucesso!`)
+          onRefresh()
+          
+          // OS Desktop Notification
+          sendDesktopNotification(
+            'EZZO Studio Dev',
+            `As dependências (${targetName}) foram instaladas e atualizadas no repositório!`
+          )
+        }, 400)
+      }
+    } catch (err: any) {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      setInstalling(false)
+      setInstallSuccessMsg(`❌ Erro na instalação: ${err.message || String(err)}`)
+    }
   }
 
   return (
@@ -199,8 +208,8 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
                   installProgress={installProgress}
                   installTarget={installTarget}
                   installSuccessMsg={installSuccessMsg}
-                  onInstallAll={() => runInstallCommand('npm install', 'Todas as Dependências')}
-                  onInstallPkg={(pkg) => runInstallCommand(`npm install ${pkg.replace(' (dev)', '')}@latest`, pkg)}
+                  onInstallAll={() => runInstallCommand()}
+                  onInstallPkg={(pkg) => runInstallCommand(pkg)}
                 />
               </div>
 

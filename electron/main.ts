@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as https from 'https'
-import { execSync } from 'child_process'
+import { execSync, exec } from 'child_process'
 import { createServer } from 'http'
 import { Server as SocketIOServer, Socket } from 'socket.io'
 import chokidar from 'chokidar'
@@ -108,9 +108,14 @@ ipcMain.handle('read-dir', (_e, dirPath: string) => {
     const stat = fs.statSync(p)
     const name = path.basename(p)
     if (stat.isDirectory()) {
-      let children: object[] = []
+      let children: any[] = []
       try {
         children = fs.readdirSync(p).map((c) => readTree(path.join(p, c)))
+        // Sort directories first A-Z, then files A-Z
+        children.sort((a, b) => {
+          if (a.type === b.type) return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+          return a.type === 'directory' ? -1 : 1
+        })
       } catch {
         // permission denied
       }
@@ -856,6 +861,27 @@ ipcMain.handle('analyze-project', async (_e, rootPath: string) => {
   } catch (e: unknown) {
     return { error: String((e as Error).message ?? e) }
   }
+})
+
+// Real npm install execution for Project Analytics
+ipcMain.handle('exec-npm-install', async (_e, rootPath: string, pkgName?: string) => {
+  return new Promise((resolve) => {
+    const cmd = pkgName ? `npm install ${pkgName}@latest` : 'npm install'
+    const child = exec(cmd, { cwd: rootPath, env: process.env }, (error, stdout, stderr) => {
+      if (error) {
+        resolve({ success: false, error: stderr || error.message })
+      } else {
+        resolve({ success: true, output: stdout })
+      }
+    })
+
+    child.stdout?.on('data', (data: string) => {
+      const activeTabId = Array.from(ptyProcesses.keys())[0]
+      if (activeTabId && mainWindow) {
+        mainWindow.webContents.send(`terminal-output-${activeTabId}`, data)
+      }
+    })
+  })
 })
 
 

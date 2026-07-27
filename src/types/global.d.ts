@@ -73,6 +73,7 @@ declare global {
 
       // Project analysis
       analyzeProject?: (path: string) => Promise<any>
+      execNpmInstall?: (rootPath: string, pkgName?: string) => Promise<any>
     }
   }
 }

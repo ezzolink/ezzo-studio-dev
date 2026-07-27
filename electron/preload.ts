@@ -95,4 +95,5 @@ contextBridge.exposeInMainWorld('api', {
 
   // F3: analyze project
   analyzeProject: (path: string) => ipcRenderer.invoke('analyze-project', path),
+  execNpmInstall: (rootPath: string, pkgName?: string) => ipcRenderer.invoke('exec-npm-install', rootPath, pkgName),
 })

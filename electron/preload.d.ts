@@ -55,6 +55,7 @@ declare global {
 
       // F3: analyze project
       analyzeProject: (path: string) => Promise<ProjectAnalysis>
+      execNpmInstall: (rootPath: string, pkgName?: string) => Promise<{ success: boolean; output?: string; error?: string }>
     }
   }
 }

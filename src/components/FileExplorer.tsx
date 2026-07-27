@@ -395,12 +395,18 @@ function TreeNode({
         {node.remote && <span style={{ fontSize: 9, color: 'var(--warning)', flexShrink: 0, opacity: 0.8 }}>remote</span>}
       </div>
 
-      {node.type === 'directory' && expanded && node.children?.map(child => (
-        <TreeNode key={child.path} node={child} depth={depth + 1}
-          onFileOpen={onFileOpen} onContext={onContext}
-          onDragStart={onDragStart} onDrop={onDrop} onFileOpenSplit={onFileOpenSplit}
-          editingPeers={editingPeers} gitMap={gitMap} collapseSignal={collapseSignal} />
-      ))}
+      {node.type === 'directory' && expanded && (() => {
+        const sortedChildren = [...(node.children || [])].sort((a, b) => {
+          if (a.type === b.type) return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+          return a.type === 'directory' ? -1 : 1
+        })
+        return sortedChildren.map(child => (
+          <TreeNode key={child.path} node={child} depth={depth + 1}
+            onFileOpen={onFileOpen} onContext={onContext}
+            onDragStart={onDragStart} onDrop={onDrop} onFileOpenSplit={onFileOpenSplit}
+            editingPeers={editingPeers} gitMap={gitMap} collapseSignal={collapseSignal} />
+        ))
+      })()}
     </div>
   )
 }
