@@ -867,28 +867,49 @@ ipcMain.handle('analyze-project', async (_e, rootPath: string) => {
 ipcMain.handle('exec-npm-install', async (_e, rootPath: string, pkgName?: string) => {
   return new Promise((resolve) => {
     if (!rootPath || !fs.existsSync(rootPath)) {
-      resolve({ success: false, error: 'Diretório do projeto inválido' })
+      resolve({ success: false, error: 'Diretório do projeto inválido ou inexistente.' })
       return
     }
 
-    const isWin = process.platform === 'win32'
-    const command = isWin
-      ? (pkgName ? `npm.cmd install ${pkgName}@latest` : 'npm.cmd install')
-      : (pkgName ? `npm install ${pkgName}@latest` : 'npm install')
+    // Check that package.json exists before running npm install
+    const pkgJsonPath = path.join(rootPath, 'package.json')
+    if (!fs.existsSync(pkgJsonPath)) {
+      resolve({ success: false, error: 'Nenhum package.json encontrado neste repositório. Crie um com "npm init -y" primeiro.' })
+      return
+    }
 
-    const child = exec(command, { cwd: rootPath, env: process.env, shell: true }, (error, stdout, stderr) => {
+    // On Windows, exec already uses cmd.exe as shell, so just 'npm' works.
+    // Using 'npm' (not 'npm.cmd') with exec is correct because exec spawns a shell.
+    const command = pkgName
+      ? `npm install ${pkgName}@latest`
+      : 'npm install'
+
+    console.log(`[exec-npm-install] Running: ${command} in ${rootPath}`)
+
+    const child = exec(command, {
+      cwd: rootPath,
+      env: { ...process.env, npm_config_loglevel: 'verbose' },
+      maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large npm output
+      timeout: 120000, // 2 minute timeout
+    }, (error, stdout, stderr) => {
       if (error) {
-        resolve({ success: false, error: stderr || stdout || error.message })
+        console.error(`[exec-npm-install] Error:`, error.message)
+        console.error(`[exec-npm-install] stderr:`, stderr)
+        resolve({ success: false, error: (stderr || stdout || error.message).slice(0, 500) })
       } else {
-        resolve({ success: true, output: stdout })
+        console.log(`[exec-npm-install] Success. stdout length: ${stdout.length}`)
+        resolve({ success: true, output: stdout.slice(0, 2000) })
       }
     })
 
+    // Stream output to the user's terminal in real-time
     const sendToTerm = (chunk: string) => {
-      const activeTabId = Array.from(ptyProcesses.keys())[0]
-      if (activeTabId && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(`terminal-output-${activeTabId}`, chunk)
-      }
+      try {
+        const activeTabId = Array.from(ptyProcesses.keys())[0]
+        if (activeTabId && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send(`terminal-output-${activeTabId}`, chunk)
+        }
+      } catch { /* ignore send errors */ }
     }
 
     child.stdout?.on('data', (data: string) => sendToTerm(data))

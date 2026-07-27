@@ -395,11 +395,17 @@ function Dependencies({
         </div>
       )}
 
-      {/* Success Notification Message */}
+      {/* Success / Error Notification Message */}
       {installSuccessMsg && !installing && (
         <div style={{
-          padding: '8px 12px', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)',
-          borderRadius: 6, color: '#22c55e', fontSize: 11, fontWeight: 600, marginBottom: 10,
+          padding: '8px 12px',
+          background: installSuccessMsg.startsWith('❌') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+          border: `1px solid ${installSuccessMsg.startsWith('❌') ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
+          borderRadius: 6,
+          color: installSuccessMsg.startsWith('❌') ? '#ef4444' : '#22c55e',
+          fontSize: 11, fontWeight: 600, marginBottom: 10,
+          wordBreak: 'break-word' as const,
+          whiteSpace: 'pre-wrap' as const,
         }}>
           {installSuccessMsg}
         </div>
