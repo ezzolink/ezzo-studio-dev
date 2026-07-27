@@ -200,10 +200,10 @@ export default function TitleBar({
                     left: 0,
                     marginTop: 4,
                     minWidth: 200,
-                    background: '#161b22',
+                    background: 'var(--bg-secondary)',
                     border: '1px solid var(--border)',
                     borderRadius: 6,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
                     padding: '4px 0',
                     zIndex: 2000,
                   }}>
@@ -227,7 +227,7 @@ export default function TitleBar({
                             color: 'var(--text-primary)',
                             fontSize: 12,
                           }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent)')}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
                           <span>{item.label}</span>

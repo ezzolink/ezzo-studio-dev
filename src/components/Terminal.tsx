@@ -85,11 +85,11 @@ const XTERM_LIGHT = {
 
 let termCounter = 0
 
-function createTab(id: string, name: string, fontSize = 13): Omit<TermTab, 'container'> & { container: null } {
+function createTab(id: string, name: string, fontSize = 13, isDark = true): Omit<TermTab, 'container'> & { container: null } {
   const term = new XTerm({
     fontFamily: 'var(--font-mono)',
     fontSize,
-    theme: XTERM_DARK,
+    theme: isDark ? XTERM_DARK : XTERM_LIGHT,
     cursorBlink: true,
     allowTransparency: true,
     scrollback: 5000,
@@ -121,7 +121,9 @@ export default function Terminal({ onReady }: Props) {
   // Apply xterm theme when dark/light changes
   useEffect(() => {
     const xtermTheme = isDark ? XTERM_DARK : XTERM_LIGHT
-    tabsRef.current.forEach(t => t.term.options.theme = xtermTheme)
+    tabsRef.current.forEach(t => {
+      t.term.options.theme = { ...xtermTheme }
+    })
   }, [isDark])
 
   const spawnTab = useCallback(async (tab: TermTab) => {
@@ -154,7 +156,7 @@ export default function Terminal({ onReady }: Props) {
     termCounter++
     const id = `term-${termCounter}`
     const name = `bash ${termCounter}`
-    const partial = createTab(id, name, settings.terminalFontSize)
+    const partial = createTab(id, name, settings.terminalFontSize, isDark)
     const tab = partial as unknown as TermTab // container set via ref callback
     setTabs(prev => {
       const next = [...prev, tab]
@@ -163,7 +165,7 @@ export default function Terminal({ onReady }: Props) {
     })
     setActiveId(id)
     // spawnTab called in container ref callback
-  }, [])
+  }, [settings.terminalFontSize, isDark])
 
   const closeTab = useCallback((id: string) => {
     window.api.killTerminal(id)
@@ -182,7 +184,7 @@ export default function Terminal({ onReady }: Props) {
     termCounter++
     const id = `term-${termCounter}`
     const name = `bash ${termCounter}`
-    const partial = createTab(id, name, settings.terminalFontSize)
+    const partial = createTab(id, name, settings.terminalFontSize, isDark)
     const tab = partial as unknown as TermTab
     tabsRef.current = [tab]
     setTabs([tab])
@@ -232,7 +234,7 @@ export default function Terminal({ onReady }: Props) {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '0 10px', height: 32, cursor: 'pointer', whiteSpace: 'nowrap',
               fontSize: 11,
-              background: t.id === activeId ? '#0d1117' : 'var(--bg-secondary)',
+              background: t.id === activeId ? (isDark ? '#0d1117' : '#ffffff') : 'var(--bg-secondary)',
               borderBottom: `2px solid ${t.id === activeId ? 'var(--accent)' : 'transparent'}`,
               color: t.id === activeId ? 'var(--text-primary)' : 'var(--text-muted)',
               borderRight: '1px solid var(--border)',
