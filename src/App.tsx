@@ -386,8 +386,22 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <TitleBar folderName={folderName} onOpenFolder={handleOpenFolder}
-        update={update} onShowUpdate={() => setShowUpdate(true)} />
+      <TitleBar
+        folderName={folderName}
+        activeFile={activeFile}
+        onOpenFolder={handleOpenFolder}
+        onSaveAll={handleSaveAll}
+        onToggleTerminal={() => setTerminalVisible(v => !v)}
+        onToggleSplit={() => setSplitEnabled(!splitEnabled)}
+        onSelectPanel={setActivePanel}
+        onOpenPalette={(mode) => {
+          if (mode === 'command') setPaletteMode('commands')
+          else setPaletteMode('files')
+          setPaletteOpen(true)
+        }}
+        update={update}
+        onShowUpdate={() => setShowUpdate(true)}
+      />
 
       <ToolBar
         onOpenFolder={handleOpenFolder}
