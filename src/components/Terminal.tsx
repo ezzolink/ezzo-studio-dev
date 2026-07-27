@@ -6,7 +6,7 @@ import type { ILinkProvider, ILink, IViewportRange } from 'xterm'
 import 'xterm/css/xterm.css'
 import { useTheme } from '../hooks/useTheme'
 import { useSettings } from '../hooks/useSettings'
-import { IconClose, IconDelete } from './Icons'
+import { IconClose, IconDelete, IconCopy } from './Icons'
 
 type BottomTab = 'problems' | 'output' | 'debug' | 'terminal' | 'ports' | 'gitlens' | 'query'
 
@@ -97,7 +97,32 @@ function createTab(id: string, name: string, shellType: 'powershell' | 'cmd' | '
     cursorBlink: true,
     allowTransparency: true,
     scrollback: 5000,
+    rightClickSelectsWord: true,
   })
+
+  // Handle Ctrl+C and Ctrl+V clipboard operations
+  term.attachCustomKeyEventHandler((arg: KeyboardEvent) => {
+    if (arg.type === 'keydown') {
+      // Ctrl+C or Cmd+C
+      if ((arg.ctrlKey || arg.metaKey) && arg.key.toLowerCase() === 'c') {
+        if (term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection())
+          return false // Don't send interrupt signal if text is selected!
+        }
+      }
+      // Ctrl+V or Cmd+V
+      if ((arg.ctrlKey || arg.metaKey) && arg.key.toLowerCase() === 'v') {
+        navigator.clipboard.readText().then(text => {
+          if (text) {
+            window.api.terminalInput(id, text)
+          }
+        }).catch(() => { /* clipboard read denied */ })
+        return false // Paste handled!
+      }
+    }
+    return true
+  })
+
   const fit = new FitAddon()
   term.loadAddon(fit)
   term.loadAddon(new WebLinksAddon())
@@ -139,7 +164,7 @@ export default function Terminal({ onReady, onClose }: Props) {
     if (!el) return
     tab.fit.activate(tab.term)
     tab.term.open(el)
-    setTimeout(() => { try { tab.fit.fit() } catch { /* */ } }, 50)
+    setTimeout(() => { try { tab.fit.fit() } catch { /* */ } }, 80)
 
     await window.api.spawnTerminal(tab.id, tab.term.cols, tab.term.rows, tab.shellType)
 
@@ -151,11 +176,18 @@ export default function Terminal({ onReady, onClose }: Props) {
       tab.term.write(mdToAnsi(data))
     })
 
+    // Debounced ResizeObserver to prevent text corruption or duplication while dragging/resizing
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null
     const ro = new ResizeObserver(() => {
-      try {
-        tab.fit.fit()
-        window.api.terminalResize(tab.id, tab.term.cols, tab.term.rows)
-      } catch { /* */ }
+      if (resizeTimer) clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(() => {
+        try {
+          tab.fit.fit()
+          if (tab.term.cols > 0 && tab.term.rows > 0) {
+            window.api.terminalResize(tab.id, tab.term.cols, tab.term.rows)
+          }
+        } catch { /* */ }
+      }, 100)
     })
     ro.observe(el)
   }, [])
@@ -190,6 +222,22 @@ export default function Terminal({ onReady, onClose }: Props) {
     const current = tabsRef.current.find(t => t.id === activeId)
     if (current) {
       current.term.clear()
+    }
+  }, [activeId])
+
+  const copyCurrentSelection = useCallback(() => {
+    const current = tabsRef.current.find(t => t.id === activeId)
+    if (current && current.term.hasSelection()) {
+      navigator.clipboard.writeText(current.term.getSelection())
+    }
+  }, [activeId])
+
+  const pasteToCurrentTab = useCallback(() => {
+    const current = tabsRef.current.find(t => t.id === activeId)
+    if (current) {
+      navigator.clipboard.readText().then(text => {
+        if (text) window.api.terminalInput(current.id, text)
+      }).catch(() => { /* ignore */ })
     }
   }, [activeId])
 
@@ -291,10 +339,38 @@ export default function Terminal({ onReady, onClose }: Props) {
         {/* Right Action Icons for Terminal */}
         {activeBottomTab === 'terminal' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}>
+            {/* Copy button */}
+            <button
+              title="Copiar Seleção (Ctrl+C)"
+              onClick={copyCurrentSelection}
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--text-secondary)', padding: '3px 6px', borderRadius: 4, cursor: 'pointer', display: 'flex', alignItems: 'center',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <IconCopy size={13} />
+            </button>
+
+            {/* Paste button */}
+            <button
+              title="Colar da Área de Transferência (Ctrl+V)"
+              onClick={pasteToCurrentTab}
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--text-secondary)', padding: '3px 6px', borderRadius: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 600,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              📋
+            </button>
+
             {/* Shell selector (+) */}
             <div style={{ position: 'relative' }}>
               <button
-                title="New Terminal (Select Shell)"
+                title="Novo Terminal (PowerShell / CMD / Bash)"
                 onClick={() => setShowShellMenu(v => !v)}
                 style={{
                   background: 'transparent', border: 'none',
@@ -364,7 +440,7 @@ export default function Terminal({ onReady, onClose }: Props) {
 
             {/* Trash / Clear Output button */}
             <button
-              title="Clear Terminal / Close Active Shell"
+              title="Limpar Saída do Terminal (Clear)"
               onClick={clearCurrentTab}
               style={{
                 background: 'transparent', border: 'none',
@@ -379,7 +455,7 @@ export default function Terminal({ onReady, onClose }: Props) {
             {/* Close Bottom Panel */}
             {onClose && (
               <button
-                title="Close Panel"
+                title="Fechar Painel do Terminal"
                 onClick={onClose}
                 style={{
                   background: 'transparent', border: 'none',

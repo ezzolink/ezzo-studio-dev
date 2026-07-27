@@ -519,8 +519,11 @@ ipcMain.handle('get-tasks', (_e, rootPath: string) => {
 
 // ── Git operations ────────────────────────────────────────────────────────────
 function gitExec(cmd: string, cwd: string): string {
+  if (!cwd || !fs.existsSync(cwd) || !fs.existsSync(path.join(cwd, '.git'))) {
+    throw new Error('Not a git repository')
+  }
   try {
-    return execSync(cmd, { cwd, encoding: 'utf-8', timeout: 15000 })
+    return execSync(cmd, { cwd, encoding: 'utf-8', timeout: 15000, stdio: ['pipe', 'pipe', 'ignore'] })
   } catch (e: unknown) {
     const err = e as { stdout?: string; stderr?: string; message?: string }
     throw new Error(err.stderr || err.stdout || err.message || String(e))
