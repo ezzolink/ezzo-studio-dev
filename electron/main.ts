@@ -881,19 +881,19 @@ ipcMain.handle('exec-npm-install', async (_e, rootPath: string, pkgName?: string
       return
     }
 
-    // On Windows, exec already uses cmd.exe as shell, so just 'npm' works.
-    // Using 'npm' (not 'npm.cmd') with exec is correct because exec spawns a shell.
-    const command = pkgName
-      ? `npm install ${pkgName}@latest`
-      : 'npm install'
+    const isWin = process.platform === 'win32'
+    const command = isWin
+      ? (pkgName ? `npm.cmd install ${pkgName}@latest` : 'npm.cmd install')
+      : (pkgName ? `npm install ${pkgName}@latest` : 'npm install')
 
     console.log(`[exec-npm-install] Running: ${command} in ${rootPath}`)
 
     const child = exec(command, {
       cwd: rootPath,
       env: process.env,
+      shell: true,
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large npm output
-      timeout: 120000, // 2 minute timeout
+      timeout: 180000, // 3 minute timeout
     }, (error, stdout, stderr) => {
       if (error) {
         console.error(`[exec-npm-install] Error:`, error.message)
