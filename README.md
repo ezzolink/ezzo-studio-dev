@@ -1,7 +1,7 @@
 # EZZO Studio Dev
 
 <div align="center">
-  <img src="public/ezzo-logo-dev.png" alt="EZZO Studio Dev" height="80" />
+  <img src="assets/icon-256.png" alt="EZZO Studio Dev" height="80" />
 
   <br />
   <br />
