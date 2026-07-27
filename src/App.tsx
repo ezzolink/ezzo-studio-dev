@@ -24,6 +24,7 @@ import { useSaveWorkspace, loadWorkspace } from './hooks/useWorkspace'
 import { useUpdate } from './hooks/useUpdate'
 import { useCollabSession } from './hooks/useCollabSession'
 import UpdateModal from './components/UpdateModal'
+import AboutModal from './components/AboutModal'
 import ProjectAnalysis from './components/ProjectAnalysis'
 import type { FileNode, OpenedFile } from './types'
 
@@ -59,7 +60,8 @@ export default function App() {
 
   const { logEvent } = useSessionLog()
   const { addToast } = useToast()
-  const { update } = useUpdate()
+  const { update, check: checkUpdate } = useUpdate()
+  const [showAbout, setShowAbout] = useState(false)
   const [analysisOpen, setAnalysisOpen] = useState(false)
   const [analysis, setAnalysis] = useState<any>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -393,6 +395,7 @@ export default function App() {
         onSaveAll={handleSaveAll}
         onToggleTerminal={() => setTerminalVisible(v => !v)}
         onToggleSplit={() => setSplitEnabled(!splitEnabled)}
+        onToggleSidebar={() => setSidebarVisible(v => !v)}
         onSelectPanel={setActivePanel}
         onOpenPalette={(mode) => {
           if (mode === 'command') setPaletteMode('commands')
@@ -401,6 +404,11 @@ export default function App() {
         }}
         update={update}
         onShowUpdate={() => setShowUpdate(true)}
+        onShowAbout={() => setShowAbout(true)}
+        onCheckUpdates={async () => {
+          await checkUpdate()
+          setShowUpdate(true)
+        }}
       />
 
       <ToolBar
@@ -496,7 +504,17 @@ export default function App() {
         mode={paletteMode}
       />
 
-      {showUpdate && update?.hasUpdate && (
+      {showAbout && (
+        <AboutModal
+          onClose={() => setShowAbout(false)}
+          onCheckUpdates={async () => {
+            await checkUpdate()
+            setShowUpdate(true)
+          }}
+        />
+      )}
+
+      {showUpdate && update && (
         <UpdateModal info={update} onClose={() => setShowUpdate(false)} />
       )}
 

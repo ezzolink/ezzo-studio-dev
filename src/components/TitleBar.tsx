@@ -16,10 +16,13 @@ interface Props {
   onSaveAll?: () => void
   onToggleTerminal?: () => void
   onToggleSplit?: () => void
+  onToggleSidebar?: () => void
   onSelectPanel?: (panel: any) => void
   onOpenPalette?: (mode?: 'file' | 'command') => void
   update?: UpdateInfo | null
   onShowUpdate?: () => void
+  onShowAbout?: () => void
+  onCheckUpdates?: () => void
 }
 
 export default function TitleBar({
@@ -29,10 +32,13 @@ export default function TitleBar({
   onSaveAll,
   onToggleTerminal,
   onToggleSplit,
+  onToggleSidebar,
   onSelectPanel,
   onOpenPalette,
   update,
   onShowUpdate,
+  onShowAbout,
+  onCheckUpdates,
 }: Props) {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -84,6 +90,7 @@ export default function TitleBar({
       { label: 'Task Runner', shortcut: 'Ctrl+Shift+R', action: () => onSelectPanel?.('tasks') },
       { separator: true, label: '' },
       { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: onToggleTerminal },
+      { label: 'Toggle Sidebar', action: onToggleSidebar },
       { label: 'Toggle Split Editor', shortcut: 'Ctrl+\\', action: onToggleSplit },
     ],
     Go: [
@@ -99,8 +106,8 @@ export default function TitleBar({
       { label: 'Toggle Terminal Panel', shortcut: 'Ctrl+`', action: onToggleTerminal },
     ],
     Help: [
-      { label: 'About EZZO Studio Dev', action: () => onSelectPanel?.('settings') },
-      { label: 'Check for Updates...', action: onShowUpdate },
+      { label: 'About EZZO Studio Dev', action: onShowAbout },
+      { label: 'Check for Updates...', action: onCheckUpdates || onShowUpdate },
       { separator: true, label: '' },
       { label: 'Documentation', action: () => window.api.openUpdateUrl?.('https://github.com/ezzolink/ezzo-studio-dev') },
     ],
