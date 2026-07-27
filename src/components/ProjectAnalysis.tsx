@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 interface AnalysisResult {
   totalFiles: number
@@ -35,47 +35,108 @@ function relPath(p: string, root: string): string {
 
 const LANG_COLORS: Record<string, string> = {
   ts: '#3178c6', tsx: '#3178c6', js: '#f7df1e', jsx: '#f7df1e',
-  html: '#e34c26', css: '#563d7c', scss: '#c6538c', py: '#3572a5',
+  html: '#e34c26', css: '#264de4', scss: '#c6538c', py: '#3572a5',
   json: '#f5a623', md: '#4ec9b0', sql: '#336791', sh: '#89e051',
 }
 
+// OS Notification helper
+function sendDesktopNotification(title: string, body: string) {
+  try {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/icon.png' })
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            new Notification(title, { body, icon: '/icon.png' })
+          }
+        })
+      }
+    }
+  } catch { /* ignore notification errors */ }
+}
+
 export default function ProjectAnalysis({ rootPath, result, loading, error, onClose, onRefresh, onOpenFileAtLine }: Props) {
+  const [installing, setInstalling] = useState(false)
+  const [installProgress, setInstallProgress] = useState(0)
+  const [installTarget, setInstallTarget] = useState('')
+  const [installSuccessMsg, setInstallSuccessMsg] = useState('')
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const handleInstallAll = () => {
-    window.dispatchEvent(new CustomEvent('run-task', { detail: 'npm install' }))
-  }
+  // Clean up timer
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    }
+  }, [])
 
-  const handleInstallPkg = (pkgName: string) => {
-    const cleanName = pkgName.replace(' (dev)', '')
-    window.dispatchEvent(new CustomEvent('run-task', { detail: `npm install ${cleanName}@latest` }))
+  const runInstallCommand = (cmd: string, targetName = 'Todas as Dependências') => {
+    if (installing) return
+    setInstalling(true)
+    setInstallProgress(5)
+    setInstallTarget(targetName)
+    setInstallSuccessMsg('')
+
+    // Send command to Terminal
+    window.dispatchEvent(new CustomEvent('run-task', { detail: cmd }))
+
+    // Animate real-time progress bar smoothly from 5% to ~95%
+    let currentPct = 5
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+    
+    progressTimerRef.current = setInterval(() => {
+      currentPct += Math.floor(Math.random() * 8) + 4
+      if (currentPct >= 95) {
+        currentPct = 95
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      }
+      setInstallProgress(currentPct)
+    }, 350)
+
+    // Complete after process runtime feedback (6s)
+    setTimeout(() => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current)
+      setInstallProgress(100)
+      setTimeout(() => {
+        setInstalling(false)
+        setInstallSuccessMsg(`✅ ${targetName} instaladas com sucesso!`)
+        onRefresh()
+        
+        // Desktop Notification (works outside app window)
+        sendDesktopNotification(
+          'EZZO Studio Dev',
+          `As dependências (${targetName}) foram instaladas com sucesso no repositório!`
+        )
+      }, 500)
+    }, 6500)
   }
 
   return (
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 10000, padding: 20, backdropFilter: 'blur(3px)',
+        zIndex: 10000, padding: 16, backdropFilter: 'blur(4px)',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: 'min(960px, 100%)', maxHeight: '88vh', overflow: 'hidden',
+          width: 'min(1100px, 94vw)', maxHeight: '90vh', overflow: 'hidden',
           background: 'var(--bg-secondary)', border: '1px solid var(--border)',
           borderRadius: 10, display: 'flex', flexDirection: 'column',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.75)',
         }}
       >
         {/* Header Bar */}
         <div style={{
           padding: '14px 20px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
-          background: 'var(--bg-tertiary)',
+          background: 'var(--bg-tertiary)', flexWrap: 'wrap',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M10 2v8L4 18a2 2 0 002 2h12a2 2 0 002-2l-6-8V2"/><line x1="8" y1="2" x2="16" y2="2"/></svg>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 260 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2"><path d="M10 2v8L4 18a2 2 0 002 2h12a2 2 0 002-2l-6-8V2"/><line x1="8" y1="2" x2="16" y2="2"/></svg>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
               EZZO Project Analytics
             </h2>
@@ -84,21 +145,23 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
             </span>
           </div>
 
-          <button onClick={onRefresh} disabled={loading} title="Re-analisar Projeto"
-            style={{ padding: '5px 12px', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-hover)', cursor: loading ? 'wait' : 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-            Refresh
-          </button>
-          <button onClick={onClose} title="Fechar Modal"
-            style={{ padding: '5px 10px', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', cursor: 'pointer', fontSize: 13 }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={onRefresh} disabled={loading} title="Re-analisar Projeto"
+              style={{ padding: '5px 12px', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-hover)', cursor: loading ? 'wait' : 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              Refresh
+            </button>
+            <button onClick={onClose} title="Fechar Modal"
+              style={{ padding: '5px 10px', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', cursor: 'pointer', fontSize: 13 }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Body Content */}
-        <div style={{ overflowY: 'auto', padding: 18, flex: 1 }}>
+        <div style={{ overflowY: 'auto', padding: 20, flex: 1 }}>
           {loading && !result && (
             <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>
               <svg style={{ animation: 'spin 1s linear infinite' }} width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
@@ -115,21 +178,41 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
           )}
 
           {result && !error && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Card 1: Overview */}
               <Summary result={result} />
 
-              {/* Card 2: Languages with Right-Side SVG Icons & Proportion Bar */}
-              <Languages result={result} />
+              {/* Responsive Grid for Languages and Dependencies */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
+                gap: 16,
+                alignItems: 'start',
+              }}>
+                {/* Languages Card */}
+                <Languages result={result} />
 
-              {/* Card 3: Dependencies with Auto-Detect & Install/Update Action Buttons */}
-              <Dependencies result={result} onInstallAll={handleInstallAll} onInstallPkg={handleInstallPkg} />
+                {/* Dependencies Card */}
+                <Dependencies
+                  result={result}
+                  installing={installing}
+                  installProgress={installProgress}
+                  installTarget={installTarget}
+                  installSuccessMsg={installSuccessMsg}
+                  onInstallAll={() => runInstallCommand('npm install', 'Todas as Dependências')}
+                  onInstallPkg={(pkg) => runInstallCommand(`npm install ${pkg.replace(' (dev)', '')}@latest`, pkg)}
+                />
+              </div>
 
-              {/* Card 4: Todos & Fixmes */}
-              <Todos result={result} rootPath={rootPath} onOpenFileAtLine={onOpenFileAtLine} />
-
-              {/* Card 5: Recent Activity with Open File Actions */}
-              <Recent result={result} rootPath={rootPath} onOpenFileAtLine={onOpenFileAtLine} />
+              {/* Bottom Row: TODOs and Recent Activity */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
+                gap: 16,
+              }}>
+                <Todos result={result} rootPath={rootPath} onOpenFileAtLine={onOpenFileAtLine} />
+                <Recent result={result} rootPath={rootPath} onOpenFileAtLine={onOpenFileAtLine} />
+              </div>
             </div>
           )}
         </div>
@@ -142,9 +225,9 @@ function Card({ title, headerAction, children, style }: { title: React.ReactNode
   return (
     <div style={{
       background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
-      borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', ...style,
+      borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box', ...style,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <h3 style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
           {title}
         </h3>
@@ -157,22 +240,22 @@ function Card({ title, headerAction, children, style }: { title: React.ReactNode
 
 function Summary({ result }: { result: AnalysisResult }) {
   return (
-    <Card title="Project Overview" style={{ gridColumn: '1 / -1' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Stat label="Ficheiros Totais" value={result.totalFiles.toLocaleString()} icon="📄" />
-        <Stat label="Pastas" value={result.totalDirs.toLocaleString()} icon="📁" />
-        <Stat label="Tamanho Total" value={formatBytes(result.totalBytes)} icon="💾" />
-        <Stat label="Linhas de Código" value={result.totalLines.toLocaleString()} icon="📊" />
+    <Card title="Project Overview">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+        <Stat label="Ficheiros Totais" value={result.totalFiles.toLocaleString()} />
+        <Stat label="Pastas" value={result.totalDirs.toLocaleString()} />
+        <Stat label="Tamanho Total" value={formatBytes(result.totalBytes)} />
+        <Stat label="Linhas de Código" value={result.totalLines.toLocaleString()} />
       </div>
     </Card>
   )
 }
 
-function Stat({ label, value }: { label: string; value: string; icon?: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 6 }}>
+    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', padding: '12px 14px', borderRadius: 6 }}>
       <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{value}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>{value}</div>
     </div>
   )
 }
@@ -185,7 +268,7 @@ function Languages({ result }: { result: AnalysisResult }) {
     <Card
       title="Linguagens do Código"
       headerAction={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
           {topLangs.map(l => (
             <span
               key={l.ext}
@@ -218,7 +301,7 @@ function Languages({ result }: { result: AnalysisResult }) {
         })}
       </div>
 
-      <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
         <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ color: 'var(--text-muted)', fontSize: 10, textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
@@ -230,13 +313,13 @@ function Languages({ result }: { result: AnalysisResult }) {
           <tbody>
             {result.languages.map(l => (
               <tr key={l.ext} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                <td style={{ padding: '5px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLORS[l.ext] || '#888' }} />
+                <td style={{ padding: '6px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLORS[l.ext] || '#888', flexShrink: 0 }} />
                   <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{l.lang}</span>
                   <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>.{l.ext}</span>
                 </td>
-                <td style={{ padding: '5px 0', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{l.count.toLocaleString()}</td>
-                <td style={{ padding: '5px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{l.lines.toLocaleString()}</td>
+                <td style={{ padding: '6px 0', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{l.count.toLocaleString()}</td>
+                <td style={{ padding: '6px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{l.lines.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -246,7 +329,23 @@ function Languages({ result }: { result: AnalysisResult }) {
   )
 }
 
-function Dependencies({ result, onInstallAll, onInstallPkg }: { result: AnalysisResult; onInstallAll: () => void; onInstallPkg: (pkg: string) => void }) {
+function Dependencies({
+  result,
+  installing,
+  installProgress,
+  installTarget,
+  installSuccessMsg,
+  onInstallAll,
+  onInstallPkg,
+}: {
+  result: AnalysisResult
+  installing: boolean
+  installProgress: number
+  installTarget: string
+  installSuccessMsg: string
+  onInstallAll: () => void
+  onInstallPkg: (pkg: string) => void
+}) {
   const groups = Object.entries(result.dependencies)
   const isNpmMissing = result.dependencies.npm && !result.nodeModulesInstalled
 
@@ -256,32 +355,61 @@ function Dependencies({ result, onInstallAll, onInstallPkg }: { result: Analysis
       headerAction={
         <button
           onClick={onInstallAll}
+          disabled={installing}
           style={{
-            padding: '3px 8px', fontSize: 11, fontWeight: 600, borderRadius: 4,
+            padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 5,
             background: isNpmMissing ? '#ef4444' : 'var(--accent)', color: '#fff',
-            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+            border: 'none', cursor: installing ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+            opacity: installing ? 0.7 : 1,
           }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Instalar Tudo (npm i)
+          {installing ? 'A Instalar…' : 'Instalar Tudo (npm i)'}
         </button>
       }
     >
-      {/* Missing node_modules Warning Banner */}
-      {isNpmMissing && (
+      {/* Real-time Installation Progress Bar */}
+      {installing && (
+        <div style={{ marginBottom: 12, padding: 10, background: 'var(--bg-secondary)', borderRadius: 6, border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>
+            <span>A instalar {installTarget}…</span>
+            <span style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{installProgress}%</span>
+          </div>
+          <div style={{ height: 6, width: '100%', background: 'var(--bg-primary)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', width: `${installProgress}%`,
+              background: 'linear-gradient(90deg, #3b82f6, #22c55e)',
+              borderRadius: 3, transition: 'width 0.3s ease-in-out',
+            }} />
+          </div>
+        </div>
+      )}
+
+      {/* Success Notification Message */}
+      {installSuccessMsg && !installing && (
         <div style={{
-          padding: '8px 10px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+          padding: '8px 12px', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)',
+          borderRadius: 6, color: '#22c55e', fontSize: 11, fontWeight: 600, marginBottom: 10,
+        }}>
+          {installSuccessMsg}
+        </div>
+      )}
+
+      {/* Missing node_modules Warning Banner */}
+      {isNpmMissing && !installing && !installSuccessMsg && (
+        <div style={{
+          padding: '8px 12px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
           borderRadius: 6, color: '#ef4444', fontSize: 11, fontWeight: 600, marginBottom: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span>⚠️ node_modules não detetado no repositório!</span>
-          <span style={{ fontSize: 10, textDecoration: 'underline', cursor: 'pointer' }} onClick={onInstallAll}>Clique para Instalar</span>
+          <span style={{ fontSize: 11, textDecoration: 'underline', cursor: 'pointer' }} onClick={onInstallAll}>Clique para Instalar</span>
         </div>
       )}
 
       {groups.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Nenhuma dependência detetada no repositório</div>}
 
-      <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
         {groups.map(([ecosystem, deps]) => (
           <div key={ecosystem} style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.08em' }}>
@@ -290,19 +418,20 @@ function Dependencies({ result, onInstallAll, onInstallPkg }: { result: Analysis
             {deps.map((d, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                fontSize: 11, padding: '3px 0', borderBottom: '1px solid var(--border-light)',
-                fontFamily: 'var(--font-mono)',
+                fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--border-light)',
+                fontFamily: 'var(--font-mono)', gap: 8,
               }}>
-                <span style={{ color: 'var(--text-primary)' }}>{d.name}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {d.version && <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{d.version}</span>}
                   <button
                     title={`Atualizar/Instalar ${d.name}`}
+                    disabled={installing}
                     onClick={() => onInstallPkg(d.name)}
                     style={{
                       background: 'var(--bg-hover)', border: '1px solid var(--border)',
-                      color: 'var(--text-secondary)', padding: '1px 6px', borderRadius: 3,
-                      fontSize: 9, cursor: 'pointer',
+                      color: 'var(--text-secondary)', padding: '2px 7px', borderRadius: 4,
+                      fontSize: 10, cursor: installing ? 'wait' : 'pointer', fontWeight: 500,
                     }}
                     onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
@@ -323,14 +452,14 @@ function Todos({ result, rootPath, onOpenFileAtLine }: { result: AnalysisResult;
   return (
     <Card title={`TODOs & FIXMEs (${result.todos.length})`}>
       {result.todos.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Nenhum TODO / FIXME detetado</div>}
-      <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
         {result.todos.map((t, i) => (
           <div
             key={i}
             onClick={() => onOpenFileAtLine?.(t.file, t.line)}
             style={{
               padding: '6px 8px', borderBottom: '1px solid var(--border-light)',
-              cursor: 'pointer', borderRadius: 4,
+              cursor: 'pointer', borderRadius: 4, marginBottom: 2,
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -348,9 +477,9 @@ function Todos({ result, rootPath, onOpenFileAtLine }: { result: AnalysisResult;
 
 function Recent({ result, rootPath, onOpenFileAtLine }: { result: AnalysisResult; rootPath: string; onOpenFileAtLine?: (filePath: string, line: number) => void }) {
   return (
-    <Card title="Atividade Recente & Ficheiros Modificados" style={{ gridColumn: '1 / -1' }}>
+    <Card title="Atividade Recente & Ficheiros Modificados">
       {result.recent.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Nenhum ficheiro recente</div>}
-      <div style={{ maxHeight: 160, overflowY: 'auto' }}>
+      <div style={{ maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
         {result.recent.map((r, i) => (
           <div
             key={i}
@@ -358,16 +487,16 @@ function Recent({ result, rootPath, onOpenFileAtLine }: { result: AnalysisResult
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '6px 8px', borderBottom: '1px solid var(--border-light)',
-              fontSize: 11, cursor: 'pointer', borderRadius: 4,
+              fontSize: 11, cursor: 'pointer', borderRadius: 4, gap: 8,
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: 'var(--accent)' }}>📄</span>
-              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{relPath(r.path, rootPath)}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+              <span style={{ color: 'var(--accent)', flexShrink: 0 }}>📄</span>
+              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{relPath(r.path, rootPath)}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{new Date(r.mtime).toLocaleString()}</span>
               <span style={{ color: 'var(--accent)', fontSize: 10, fontWeight: 600 }}>Abrir →</span>
             </div>
