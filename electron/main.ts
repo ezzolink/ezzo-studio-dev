@@ -891,7 +891,7 @@ ipcMain.handle('exec-npm-install', async (_e, rootPath: string, pkgName?: string
 
     const child = exec(command, {
       cwd: rootPath,
-      env: { ...process.env, npm_config_loglevel: 'verbose' },
+      env: process.env,
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large npm output
       timeout: 120000, // 2 minute timeout
     }, (error, stdout, stderr) => {

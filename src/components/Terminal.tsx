@@ -98,6 +98,7 @@ function createTab(id: string, name: string, shellType: 'powershell' | 'cmd' | '
     allowTransparency: true,
     scrollback: 5000,
     rightClickSelectsWord: true,
+    convertEol: true,
   })
 
   // Handle Ctrl+C and Ctrl+V clipboard operations
