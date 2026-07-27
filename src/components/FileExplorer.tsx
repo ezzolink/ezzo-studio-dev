@@ -260,6 +260,8 @@ function TreeNode({
   editingPeers,
   gitMap,
   collapseSignal,
+  selectedNode,
+  onSelectNode,
 }: {
   node: FileNode
   depth: number
@@ -271,9 +273,12 @@ function TreeNode({
   editingPeers?: Map<string, { peerId: string; peerName: string; color: string }[]>
   gitMap?: Map<string, 'M' | 'A' | 'D' | '?'>
   collapseSignal?: number
+  selectedNode: FileNode | null
+  onSelectNode: (n: FileNode) => void
 }) {
   const [expanded, setExpanded] = useState(depth === 0)
   const editing = node.type === 'file' ? editingPeers?.get(node.path) : undefined
+  const isSelected = selectedNode?.path === node.path
 
   // Collapse folder when collapseSignal increments
   useEffect(() => {
@@ -308,8 +313,9 @@ function TreeNode({
         onDragStart={e => { e.stopPropagation(); onDragStart(node) }}
         onDragOver={e => { if (node.type === 'directory') e.preventDefault() }}
         onDrop={e => { e.preventDefault(); e.stopPropagation(); onDrop(node) }}
-        onContextMenu={e => { e.preventDefault(); onContext(e, node) }}
+        onContextMenu={e => { e.preventDefault(); onSelectNode(node); onContext(e, node) }}
         onClick={e => {
+          onSelectNode(node)
           if (node.type === 'directory') { setExpanded(v => !v); return }
           if (e.altKey && onFileOpenSplit) { onFileOpenSplit(node); return }
           onFileOpen(node)
@@ -318,10 +324,12 @@ function TreeNode({
           paddingLeft: depth * 12 + 6, paddingRight: 6,
           height: 26, display: 'flex', alignItems: 'center', gap: 4,
           cursor: 'pointer', borderRadius: 3,
+          background: isSelected ? 'var(--bg-hover)' : 'transparent',
+          borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
           color: node.remote ? 'var(--warning)' : gitBadgeColor ? gitBadgeColor : 'var(--text-primary)',
         }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+        onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)' }}
+        onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
       >
         {/* Chevron for dirs */}
         <span style={{ width: 14, display: 'flex', alignItems: 'center', color: 'var(--text-muted)', flexShrink: 0 }}>
@@ -398,7 +406,8 @@ function TreeNode({
           <TreeNode key={child.path} node={child} depth={depth + 1}
             onFileOpen={onFileOpen} onContext={onContext}
             onDragStart={onDragStart} onDrop={onDrop} onFileOpenSplit={onFileOpenSplit}
-            editingPeers={editingPeers} gitMap={gitMap} collapseSignal={collapseSignal} />
+            editingPeers={editingPeers} gitMap={gitMap} collapseSignal={collapseSignal}
+            selectedNode={selectedNode} onSelectNode={onSelectNode} />
         ))
       })()}
     </div>
@@ -409,6 +418,7 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const [renaming, setRenaming] = useState<FileNode | null>(null)
   const [newName, setNewName] = useState('')
+  const [selectedNode, setSelectedNode] = useState<FileNode | null>(null)
 
   // New File/Folder Modal state
   const [creatingItem, setCreatingItem] = useState<{ type: 'file' | 'folder'; basePath: string } | null>(null)
@@ -451,8 +461,21 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
     dragRef.current = null
   }, [onRefresh, fetchGitStatus])
 
-  const startCreateNew = (type: 'file' | 'folder', basePath?: string) => {
-    const base = basePath ?? rootPath
+  // Determine base target folder based on current selection
+  const startCreateNew = (type: 'file' | 'folder', explicitPath?: string) => {
+    let base = explicitPath
+    if (!base) {
+      if (selectedNode) {
+        if (selectedNode.type === 'directory') {
+          base = selectedNode.path
+        } else {
+          // Parent folder of selected file
+          base = selectedNode.path.split(/[/\\]/).slice(0, -1).join('/')
+        }
+      } else {
+        base = rootPath ?? undefined
+      }
+    }
     if (!base) return
     setCreatingItem({ type, basePath: base })
     setItemInputName('')
@@ -515,6 +538,13 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
     onRefresh()
     fetchGitStatus()
   }, [rootPath, onRefresh, fetchGitStatus])
+
+  // Get relative target folder name for modal display
+  const getRelativeTarget = () => {
+    if (!creatingItem || !rootPath) return ''
+    if (creatingItem.basePath === rootPath) return 'raiz do projeto'
+    return creatingItem.basePath.replace(rootPath, '').replace(/^[/\\]/, '')
+  }
 
   return (
     <div
@@ -627,10 +657,11 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
       <div style={{ flex: 1, overflow: 'auto', paddingTop: 2 }}>
         {tree ? (
           <TreeNode node={tree} depth={0} onFileOpen={onFileOpen}
-            onContext={(e, n) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, node: n }) }}
+            onContext={(e, n) => { e.preventDefault(); setSelectedNode(n); setContextMenu({ x: e.clientX, y: e.clientY, node: n }) }}
             onDragStart={n => { dragRef.current = n }}
             onDrop={handleDrop} onFileOpenSplit={onFileOpenSplit} editingPeers={editingPeers}
-            gitMap={gitMap} collapseSignal={collapseSignal} />
+            gitMap={gitMap} collapseSignal={collapseSignal}
+            selectedNode={selectedNode} onSelectNode={setSelectedNode} />
         ) : (
           <div style={{ padding: '24px 16px', color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', lineHeight: 1.8 }}>
             <IconFolder size={32} color="var(--text-muted)" style={{ margin: '0 auto 8px', display: 'block' }} />
@@ -659,40 +690,59 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
               Remote Files
             </div>
             <TreeNode node={remoteFiles as FileNode} depth={0} onFileOpen={onFileOpen}
-              onContext={(e, n) => setContextMenu({ x: e.clientX, y: e.clientY, node: n })}
+              onContext={(e, n) => { setSelectedNode(n); setContextMenu({ x: e.clientX, y: e.clientY, node: n }) }}
               onDragStart={n => { dragRef.current = n }}
-              onDrop={handleDrop} editingPeers={editingPeers} />
+              onDrop={handleDrop} editingPeers={editingPeers}
+              selectedNode={selectedNode} onSelectNode={setSelectedNode} />
           </div>
         )}
       </div>
 
-      {/* New File / Folder Modal */}
+      {/* Lightweight, Non-Obstructive New Item Dialog */}
       {creatingItem && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-        }} onClick={() => setCreatingItem(null)}>
-          <div style={{ background: 'var(--bg-secondary)', padding: 20, borderRadius: 8, border: '1px solid var(--border)', minWidth: 320, boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>
-              {creatingItem.type === 'file' ? '📄 Criar Novo Ficheiro' : '📁 Criar Nova Pasta'}
-            </div>
-            <input
-              autoFocus
-              placeholder={creatingItem.type === 'file' ? 'exemplo.ts' : 'minha-pasta'}
-              value={itemInputName}
-              onChange={e => setItemInputName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') doCreateItem(); if (e.key === 'Escape') setCreatingItem(null) }}
-              style={{
-                width: '100%', marginBottom: 16, padding: '6px 10px', fontSize: 12,
-                background: 'var(--bg-primary)', color: 'var(--text-primary)',
-                border: '1px solid var(--border)', borderRadius: 4, boxSizing: 'border-box',
-              }}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn" onClick={() => setCreatingItem(null)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={doCreateItem} disabled={!itemInputName.trim()}>Criar</button>
-            </div>
+        <div
+          style={{
+            position: 'absolute', top: 34, left: 8, right: 8, zIndex: 1000,
+            background: 'var(--bg-secondary)', border: '1px solid var(--accent)',
+            borderRadius: 6, padding: '10px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {creatingItem.type === 'file' ? '📄 Novo Ficheiro' : '📁 Nova Pasta'}
+            </span>
+            <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+              em: {getRelativeTarget()}
+            </span>
+          </div>
+          <input
+            autoFocus
+            placeholder={creatingItem.type === 'file' ? 'nome-do-ficheiro.ts' : 'nome-da-pasta'}
+            value={itemInputName}
+            onChange={e => setItemInputName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') doCreateItem(); if (e.key === 'Escape') setCreatingItem(null) }}
+            style={{
+              width: '100%', padding: '5px 8px', fontSize: 12,
+              background: 'var(--bg-primary)', color: 'var(--text-primary)',
+              border: '1px solid var(--border)', borderRadius: 4, boxSizing: 'border-box',
+              marginBottom: 8,
+            }}
+          />
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setCreatingItem(null)}
+              style={{ padding: '3px 8px', fontSize: 11, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: 4, cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={doCreateItem}
+              disabled={!itemInputName.trim()}
+              style={{ padding: '3px 10px', fontSize: 11, background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: 4, cursor: 'pointer', fontWeight: 600, opacity: itemInputName.trim() ? 1 : 0.5 }}
+            >
+              Criar
+            </button>
           </div>
         </div>
       )}
