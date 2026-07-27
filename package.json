@@ -1,6 +1,6 @@
 {
   "name": "ezzo-studio-dev",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "EZZO Studio Dev - Collaborative IDE for local network",
   "main": "dist-electron/main.js",
   "author": "EZZO",

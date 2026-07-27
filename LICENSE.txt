@@ -1,29 +1,25 @@
-EZZO WORK LOCAL — CONTRATO DE LICENÇA DE UTILIZADOR FINAL
-===========================================================
+EZZO STUDIO DEV — CONTRATO DE LICENÇA DE UTILIZADOR FINAL & TERMOS
+=====================================================================
 
-Copyright © 2026 EZZO. Todos os direitos reservados.
+Copyright © 2026 EZZO Studio Dev. Todos os direitos reservados.
 
-Este software é fornecido "tal como está", sem garantias expressas ou implícitas.
+Este software é fornecido "tal como está", sob a Licença MIT para utilização livre
+em projetos pessoais, de equipa e comerciais.
 
-Ao instalar o EZZO Work Local, o utilizador concorda com os seguintes termos:
+Ao instalar e utilizar o EZZO Studio Dev v1.0.9, o utilizador concorda com os seguintes termos:
 
 1. UTILIZAÇÃO PERMITIDA
-   O software pode ser utilizado para fins pessoais e comerciais internos.
+   O software pode ser utilizado livremente para desenvolvimento pessoal, comercial interno
+   e colaborativo em rede local.
 
-2. RESTRIÇÕES
-   É proibida a redistribuição, cópia ou modificação do software sem
-   autorização expressa da EZZO.
+2. COLABORAÇÃO EM REDE LOCAL
+   As sessões de colaboração ocorrem exclusivamente dentro da rede local do utilizador,
+   garantindo total privacidade e segurança sem envio de dados para servidores externos.
 
 3. ISENÇÃO DE RESPONSABILIDADE
-   A EZZO não se responsabiliza por quaisquer danos directos ou indirectos
-   resultantes da utilização deste software.
+   O EZZO Studio Dev não se responsabiliza por quaisquer perdas de dados decorrentes de
+   falhas de hardware ou má utilização do ambiente local.
 
-4. ACTUALIZAÇÕES
-   A EZZO pode disponibilizar actualizações que melhoram a segurança e
-   funcionalidade. Recomenda-se manter o software actualizado.
-
-5. SUPORTE
-   Para suporte, contacte: suporte@ezzo.dev
-   Website: https://ezzo.dev
-
-Ao clicar em "Aceito os termos", confirma que leu e aceita este contrato.
+4. SUPORTE & CONTACTO
+   Website: https://github.com/ezzolink/ezzo-studio-dev
+   Suporte: suporte@ezzo.dev
