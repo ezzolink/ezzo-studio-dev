@@ -1,12 +1,5 @@
 import React from 'react'
-import { IconOpenFolder, IconTerminal, IconSave } from './Icons'
-
-// Melhor ícone VS Code — logótipo real simplificado
-const IconVSCode = ({ size = 15, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill={color}>
-    <path d="M74.5 6.6L51.4 27.4 32.6 12 24 18.5l17 14.5L24 47.5l8.6 6.5 18.8-15.4 23.1 20.8V6.6zm0 86.8L51.4 72.6 32.6 88 24 81.5l17-14.5L24 52.5 32.6 46l18.8 15.4 23.1-20.8v52.8z"/>
-  </svg>
-)
+import { IconOpenFolder, IconTerminal, IconSave, IconVSCode } from './Icons'
 
 // Layout / panel toggle
 const IconLayoutPanel = ({ size = 15, color = 'currentColor' }) => (

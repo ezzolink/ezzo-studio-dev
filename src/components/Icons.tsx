@@ -94,3 +94,15 @@ export function EzzoLogo({ height = 22, showText = true, style }: { height?: num
   )
 }
 
+export function IconVSCode({ size = 15 }: { size?: number }) {
+  return (
+    <img
+      src="/microsoft_visual_studio_code.webp"
+      alt="VS Code"
+      width={size}
+      height={size}
+      style={{ objectFit: 'contain', display: 'block' }}
+    />
+  )
+}
+

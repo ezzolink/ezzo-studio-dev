@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { IconMinimize, IconMaximize, IconClose, EzzoLogo } from './Icons'
+import { IconMinimize, IconMaximize, IconClose, EzzoLogo, IconOpenFolder, IconSave, IconTerminal, IconVSCode } from './Icons'
 import type { UpdateInfo } from '../hooks/useUpdate'
+
+// Layout / Sidebar toggle icon
+const IconLayoutPanel = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d="M3 9h18M9 21V9"/>
+  </svg>
+)
+
+// Split editor icon
+const IconSplit = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d="M12 3v18"/>
+  </svg>
+)
 
 interface MenuItem {
   label: string
@@ -14,9 +30,13 @@ interface Props {
   activeFile?: string | null
   onOpenFolder: () => void
   onSaveAll?: () => void
+  terminalVisible?: boolean
   onToggleTerminal?: () => void
+  splitEnabled?: boolean
   onToggleSplit?: () => void
+  sidebarVisible?: boolean
   onToggleSidebar?: () => void
+  hasUnsaved?: boolean
   onSelectPanel?: (panel: any) => void
   onOpenPalette?: (mode?: 'file' | 'command') => void
   update?: UpdateInfo | null
@@ -30,9 +50,13 @@ export default function TitleBar({
   activeFile,
   onOpenFolder,
   onSaveAll,
+  terminalVisible = true,
   onToggleTerminal,
+  splitEnabled = false,
   onToggleSplit,
+  sidebarVisible = true,
   onToggleSidebar,
+  hasUnsaved = false,
   onSelectPanel,
   onOpenPalette,
   update,
@@ -263,6 +287,45 @@ export default function TitleBar({
         )}
       </div>
 
+      {/* Right Quick Action Icons Bar: Open Folder, Save All, Hide Terminal, Hide Sidebar, Split Editor, VS Code */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, paddingRight: 6, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        <QuickBtn
+          title="Open Folder"
+          onClick={onOpenFolder}
+          icon={<IconOpenFolder size={14} />}
+        />
+        <QuickBtn
+          title="Save All"
+          onClick={() => onSaveAll?.()}
+          highlight={hasUnsaved}
+          icon={<IconSave size={14} />}
+        />
+        <QuickBtn
+          title={terminalVisible ? 'Hide Terminal' : 'Show Terminal'}
+          onClick={() => onToggleTerminal?.()}
+          active={terminalVisible}
+          icon={<IconTerminal size={14} />}
+        />
+        <QuickBtn
+          title={sidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+          onClick={() => onToggleSidebar?.()}
+          active={sidebarVisible}
+          icon={<IconLayoutPanel size={14} />}
+        />
+        <QuickBtn
+          title={splitEnabled ? 'Close Split' : 'Split Editor'}
+          onClick={() => onToggleSplit?.()}
+          active={splitEnabled}
+          icon={<IconSplit size={14} />}
+        />
+        <QuickBtn
+          title="Open in VS Code"
+          onClick={() => activeFile && window.api.openInVSCode?.(activeFile)}
+          disabled={!activeFile}
+          icon={<IconVSCode size={14} />}
+        />
+      </div>
+
       {/* Update icon — only shown when update available */}
       {update?.hasUpdate && (
         <div style={{ WebkitAppRegion: 'no-drag', paddingRight: 4 } as React.CSSProperties}>
@@ -333,4 +396,55 @@ export default function TitleBar({
     </div>
   )
 }
+
+function QuickBtn({
+  icon,
+  title,
+  onClick,
+  active = false,
+  highlight = false,
+  disabled = false,
+}: {
+  icon: React.ReactNode
+  title: string
+  onClick: () => void
+  active?: boolean
+  highlight?: boolean
+  disabled?: boolean
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: 28,
+        height: 24,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 4,
+        border: 'none',
+        background: active ? 'var(--bg-hover)' : 'transparent',
+        color: highlight ? 'var(--warning)' : active ? 'var(--accent)' : 'var(--text-secondary)',
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'default' : 'pointer',
+        transition: 'background 0.15s, color 0.15s',
+      }}
+      onMouseEnter={e => {
+        if (!disabled) {
+          ;(e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'
+          ;(e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'
+        }
+      }}
+      onMouseLeave={e => {
+        ;(e.currentTarget as HTMLElement).style.background = active ? 'var(--bg-hover)' : 'transparent'
+        ;(e.currentTarget as HTMLElement).style.color = highlight ? 'var(--warning)' : active ? 'var(--accent)' : 'var(--text-secondary)'
+      }}
+    >
+      {icon}
+    </button>
+  )
+}
+
 

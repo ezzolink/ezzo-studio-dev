@@ -393,9 +393,13 @@ export default function App() {
         activeFile={activeFile}
         onOpenFolder={handleOpenFolder}
         onSaveAll={handleSaveAll}
+        terminalVisible={terminalVisible}
         onToggleTerminal={() => setTerminalVisible(v => !v)}
+        splitEnabled={splitEnabled}
         onToggleSplit={() => setSplitEnabled(!splitEnabled)}
+        sidebarVisible={sidebarVisible}
         onToggleSidebar={() => setSidebarVisible(v => !v)}
+        hasUnsaved={hasUnsaved}
         onSelectPanel={setActivePanel}
         onOpenPalette={(mode) => {
           if (mode === 'command') setPaletteMode('commands')
