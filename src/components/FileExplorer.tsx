@@ -25,14 +25,12 @@ function FileTypeIcon({ name }: { name: string }) {
   const base = name.toLowerCase()
   const s = 14
 
-  // Helper SVG template
   const SvgBox = ({ color, children }: { color: string; children: React.ReactNode }) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       {children}
     </svg>
   )
 
-  // 1. Special Exact Filenames
   if (base === 'package.json' || base === 'package-lock.json') {
     return (
       <SvgBox color="#cb3837">
@@ -90,7 +88,6 @@ function FileTypeIcon({ name }: { name: string }) {
     )
   }
 
-  // 2. Language Extensions
   if (ext === 'ts') {
     return (
       <SvgBox color="#3178c6">
@@ -232,7 +229,6 @@ function FileTypeIcon({ name }: { name: string }) {
     )
   }
 
-  // Fallback default file icon
   return (
     <SvgBox color="var(--text-secondary)">
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
@@ -286,14 +282,13 @@ function TreeNode({
     }
   }, [collapseSignal, depth, node.type])
 
-  // Get Git status for file or child status for directory
+  // Get Git status for file
   const relativePath = node.path.replace(/\\/g, '/')
   let gitStatus: 'M' | 'A' | 'D' | '?' | undefined = undefined
 
   if (node.type === 'file' && gitMap) {
     gitStatus = gitMap.get(relativePath)
     if (!gitStatus) {
-      // Try matching by filename end
       for (const [p, st] of gitMap.entries()) {
         if (p.endsWith(node.name) || relativePath.endsWith(p)) {
           gitStatus = st
@@ -303,7 +298,6 @@ function TreeNode({
     }
   }
 
-  // Git badge color & label
   const gitBadgeColor = gitStatus === 'M' ? '#eab308' : gitStatus === 'A' ? '#22c55e' : gitStatus === '?' ? '#8b949e' : gitStatus === 'D' ? '#ef4444' : undefined
   const gitBadgeLabel = gitStatus === 'M' ? 'M' : gitStatus === 'A' ? 'A' : gitStatus === '?' ? 'U' : gitStatus === 'D' ? 'D' : undefined
 
@@ -415,6 +409,11 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const [renaming, setRenaming] = useState<FileNode | null>(null)
   const [newName, setNewName] = useState('')
+
+  // New File/Folder Modal state
+  const [creatingItem, setCreatingItem] = useState<{ type: 'file' | 'folder'; basePath: string } | null>(null)
+  const [itemInputName, setItemInputName] = useState('')
+
   const [gitMap, setGitMap] = useState<Map<string, 'M' | 'A' | 'D' | '?'>>(new Map())
   const [collapseSignal, setCollapseSignal] = useState(0)
   const dragRef = useRef<FileNode | null>(null)
@@ -452,17 +451,26 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
     dragRef.current = null
   }, [onRefresh, fetchGitStatus])
 
-  const createNew = useCallback(async (type: 'file' | 'folder', basePath?: string) => {
+  const startCreateNew = (type: 'file' | 'folder', basePath?: string) => {
     const base = basePath ?? rootPath
     if (!base) return
-    const label = type === 'file' ? 'File name:' : 'Folder name:'
-    const name = prompt(label)
-    if (!name) return
-    if (type === 'file') await window.api.createFile(base + '/' + name)
-    else await window.api.createFolder(base + '/' + name)
+    setCreatingItem({ type, basePath: base })
+    setItemInputName('')
+  }
+
+  const doCreateItem = async () => {
+    if (!creatingItem || !itemInputName.trim()) return
+    const fullPath = `${creatingItem.basePath}/${itemInputName.trim()}`
+    if (creatingItem.type === 'file') {
+      await window.api.createFile(fullPath)
+    } else {
+      await window.api.createFolder(fullPath)
+    }
+    setCreatingItem(null)
+    setItemInputName('')
     onRefresh()
     fetchGitStatus()
-  }, [rootPath, onRefresh, fetchGitStatus])
+  }
 
   const execCtx = useCallback(async (action: string) => {
     const node = contextMenu?.node
@@ -470,9 +478,9 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
     closeCtx()
     const base = node.type === 'directory' ? node.path : node.path.split(/[/\\]/).slice(0, -1).join('/')
     if (action === 'new-file') {
-      await createNew('file', base)
+      startCreateNew('file', base)
     } else if (action === 'new-folder') {
-      await createNew('folder', base)
+      startCreateNew('folder', base)
     } else if (action === 'rename') {
       setRenaming(node); setNewName(node.name)
     } else if (action === 'copy') {
@@ -482,7 +490,7 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
     } else if (action === 'remote-copy' && onRemoteCopy) {
       onRemoteCopy(node)
     }
-  }, [contextMenu, closeCtx, onRefresh, onRemoteCopy, createNew, fetchGitStatus])
+  }, [contextMenu, closeCtx, onRefresh, onRemoteCopy, fetchGitStatus])
 
   const doRename = async () => {
     if (!renaming || !newName) return
@@ -526,46 +534,85 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
         <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           Explorer
         </span>
-        <div style={{ display: 'flex', gap: 2 }}>
-          {/* New File (+) */}
-          <button title="New File" onClick={() => createNew('file')} disabled={!rootPath}
-            style={{ padding: '2px 4px', color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)', display: 'flex', opacity: rootPath ? 1 : 0.4 }}
-            onMouseEnter={e => { if (rootPath) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = rootPath ? 'var(--text-secondary)' : 'var(--text-muted)'}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* 1. New File (+) */}
+          <button
+            title="Novo Ficheiro (New File)"
+            onClick={() => startCreateNew('file')}
+            disabled={!rootPath}
+            style={{
+              background: 'transparent', border: 'none', cursor: rootPath ? 'pointer' : 'default',
+              padding: '3px 5px', borderRadius: 4, color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: rootPath ? 1 : 0.4,
+            }}
+            onMouseEnter={e => { if (rootPath) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+            onMouseLeave={e => { if (rootPath) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
+          >
             <IconNewFile size={14} />
           </button>
 
-          {/* New Folder (Folder +) */}
-          <button title="New Folder" onClick={() => createNew('folder')} disabled={!rootPath}
-            style={{ padding: '2px 4px', color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)', display: 'flex', opacity: rootPath ? 1 : 0.4 }}
-            onMouseEnter={e => { if (rootPath) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = rootPath ? 'var(--text-secondary)' : 'var(--text-muted)'}>
+          {/* 2. New Folder (Folder +) */}
+          <button
+            title="Nova Pasta (New Folder)"
+            onClick={() => startCreateNew('folder')}
+            disabled={!rootPath}
+            style={{
+              background: 'transparent', border: 'none', cursor: rootPath ? 'pointer' : 'default',
+              padding: '3px 5px', borderRadius: 4, color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: rootPath ? 1 : 0.4,
+            }}
+            onMouseEnter={e => { if (rootPath) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+            onMouseLeave={e => { if (rootPath) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
+          >
             <IconNewFolder size={14} />
           </button>
 
-          {/* Refresh */}
-          <button title="Refresh" onClick={() => { onRefresh(); fetchGitStatus() }}
-            style={{ padding: '2px 4px', color: 'var(--text-secondary)', display: 'flex' }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'}>
+          {/* 3. Refresh */}
+          <button
+            title="Atualizar / Refresh"
+            onClick={() => { onRefresh(); fetchGitStatus() }}
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              padding: '3px 5px', borderRadius: 4, color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+          >
             <IconRefresh size={14} />
           </button>
 
-          {/* Collapse All */}
-          <button title="Collapse All Folders" onClick={() => setCollapseSignal(s => s + 1)} disabled={!rootPath}
-            style={{ padding: '2px 4px', color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)', display: 'flex', opacity: rootPath ? 1 : 0.4 }}
-            onMouseEnter={e => { if (rootPath) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = rootPath ? 'var(--text-secondary)' : 'var(--text-muted)'}>
+          {/* 4. Collapse All Folders */}
+          <button
+            title="Recolher Pastas (Collapse All Folders)"
+            onClick={() => setCollapseSignal(s => s + 1)}
+            disabled={!rootPath}
+            style={{
+              background: 'transparent', border: 'none', cursor: rootPath ? 'pointer' : 'default',
+              padding: '3px 5px', borderRadius: 4, color: rootPath ? 'var(--text-secondary)' : 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: rootPath ? 1 : 0.4,
+            }}
+            onMouseEnter={e => { if (rootPath) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+            onMouseLeave={e => { if (rootPath) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           </button>
 
-          {/* Analyze / Search */}
+          {/* 5. EZZO Project Analytics */}
           {onAnalyze && (
-            <button title="Analyze Project" onClick={onAnalyze} disabled={!rootPath}
-              style={{ padding: '2px 5px', color: rootPath ? 'var(--accent)' : 'var(--text-muted)', display: 'flex', opacity: rootPath ? 1 : 0.4, marginLeft: 4 }}
-              onMouseEnter={e => { if (rootPath) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = rootPath ? 'var(--accent)' : 'var(--text-muted)'}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button
+              title="EZZO Project Analytics"
+              onClick={onAnalyze}
+              disabled={!rootPath}
+              style={{
+                background: 'transparent', border: 'none', cursor: rootPath ? 'pointer' : 'default',
+                padding: '3px 5px', borderRadius: 4, color: rootPath ? 'var(--accent)' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: rootPath ? 1 : 0.4, marginLeft: 2,
+              }}
+              onMouseEnter={e => { if (rootPath) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+              onMouseLeave={e => { if (rootPath) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent)' } }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 2v8L4 18a2 2 0 002 2h12a2 2 0 002-2l-6-8V2" />
                 <line x1="8" y1="2" x2="16" y2="2" />
                 <circle cx="14" cy="15" r="1.5" fill="currentColor" stroke="none" />
@@ -618,6 +665,37 @@ export default function FileExplorer({ rootPath, tree, onFileOpen, onRefresh, re
           </div>
         )}
       </div>
+
+      {/* New File / Folder Modal */}
+      {creatingItem && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+        }} onClick={() => setCreatingItem(null)}>
+          <div style={{ background: 'var(--bg-secondary)', padding: 20, borderRadius: 8, border: '1px solid var(--border)', minWidth: 320, boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>
+              {creatingItem.type === 'file' ? '📄 Criar Novo Ficheiro' : '📁 Criar Nova Pasta'}
+            </div>
+            <input
+              autoFocus
+              placeholder={creatingItem.type === 'file' ? 'exemplo.ts' : 'minha-pasta'}
+              value={itemInputName}
+              onChange={e => setItemInputName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') doCreateItem(); if (e.key === 'Escape') setCreatingItem(null) }}
+              style={{
+                width: '100%', marginBottom: 16, padding: '6px 10px', fontSize: 12,
+                background: 'var(--bg-primary)', color: 'var(--text-primary)',
+                border: '1px solid var(--border)', borderRadius: 4, boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={() => setCreatingItem(null)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={doCreateItem} disabled={!itemInputName.trim()}>Criar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rename modal */}
       {renaming && (
