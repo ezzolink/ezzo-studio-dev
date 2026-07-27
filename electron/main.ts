@@ -617,6 +617,9 @@ const UPDATE_URL = 'https://api.github.com/repos/ezzolink/ezzo-studio-dev/releas
 function httpsGet(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { 'User-Agent': 'EZZO-Studio-Dev' } }, (res) => {
+      if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
+        return httpsGet(res.headers.location).then(resolve).catch(reject)
+      }
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => resolve(data))
