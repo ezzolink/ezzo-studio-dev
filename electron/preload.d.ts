@@ -32,7 +32,7 @@ declare global {
       onPeerDisconnected: (cb: (id: string) => void) => void
 
       // Terminal (multi)
-      spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number) => Promise<boolean>
+      spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number, shellType?: string) => Promise<boolean>
       terminalInput: (idOrData: string, data?: string) => void
       terminalResize: (idOrCols: string | number, colsOrRows: number, rows?: number) => void
       killTerminal: (id?: string) => void

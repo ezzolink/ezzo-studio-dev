@@ -37,8 +37,8 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   // Terminal (multi)
-  spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number) =>
-    ipcRenderer.invoke('spawn-terminal', idOrCols, colsOrRows, rows),
+  spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number, shellType?: string) =>
+    ipcRenderer.invoke('spawn-terminal', idOrCols, colsOrRows, rows, shellType),
   terminalInput: (idOrData: string, data?: string) =>
     ipcRenderer.send('terminal-input', idOrData, data),
   terminalResize: (idOrCols: string | number, colsOrRows: number, rows?: number) =>

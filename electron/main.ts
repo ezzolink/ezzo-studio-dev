@@ -399,8 +399,8 @@ ipcMain.on('host-chat-send', (_e, data: { author: string; text: string }) => {
 })
 
 // ── Terminal (node-pty) multi-terminal ────────────────────────────────────────
-ipcMain.handle('spawn-terminal', (_e, idOrCols: string | number, colsOrRows: number, rows?: number) => {
-  // Support legacy (cols, rows) and new (id, cols, rows) signatures
+ipcMain.handle('spawn-terminal', (_e, idOrCols: string | number, colsOrRows: number, rows?: number, shellType?: string) => {
+  // Support legacy (cols, rows) and new (id, cols, rows, shellType) signatures
   let id: string, cols: number, r: number
   if (typeof idOrCols === 'number') {
     id = 'default'; cols = idOrCols; r = colsOrRows
@@ -409,12 +409,17 @@ ipcMain.handle('spawn-terminal', (_e, idOrCols: string | number, colsOrRows: num
   }
 
   ptyProcesses.get(id)?.kill()
-  const shellExe = os.platform() === 'win32' ? 'powershell.exe' : 'bash'
+
+  let shellExe = os.platform() === 'win32' ? 'powershell.exe' : 'bash'
+  if (shellType === 'cmd') shellExe = 'cmd.exe'
+  else if (shellType === 'powershell') shellExe = 'powershell.exe'
+  else if (shellType === 'bash') shellExe = os.platform() === 'win32' ? 'bash.exe' : 'bash'
+
   const proc = pty.spawn(shellExe, [], {
     name: 'xterm-color',
     cols,
     rows: r,
-    cwd: os.homedir(),
+    cwd: currentFolder || os.homedir(),
     env: process.env,
   })
 
