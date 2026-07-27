@@ -74,22 +74,22 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
     if (installing) return
     const targetName = pkgName ? pkgName.replace(' (dev)', '') : 'Todas as Dependências'
     setInstalling(true)
-    setInstallProgress(10)
+    setInstallProgress(15)
     setInstallTarget(targetName)
     setInstallSuccessMsg('')
 
     // Smooth real-time progress simulation during process execution
-    let currentPct = 10
+    let currentPct = 15
     if (progressTimerRef.current) clearInterval(progressTimerRef.current)
     
     progressTimerRef.current = setInterval(() => {
-      currentPct += Math.floor(Math.random() * 6) + 3
+      currentPct += Math.floor(Math.random() * 5) + 2
       if (currentPct >= 92) {
         currentPct = 92
         if (progressTimerRef.current) clearInterval(progressTimerRef.current)
       }
       setInstallProgress(currentPct)
-    }, 400)
+    }, 300)
 
     try {
       // Real backend child process execution!
@@ -98,20 +98,21 @@ export default function ProjectAnalysis({ rootPath, result, loading, error, onCl
 
       if (res && res.success === false) {
         setInstalling(false)
-        setInstallSuccessMsg(`❌ Erro ao instalar ${targetName}: ${res.error || 'Falha na execução'}`)
+        setInstallSuccessMsg(`❌ Erro ao instalar: ${res.error?.slice(0, 150) || 'Falha na execução'}`)
       } else {
         setInstallProgress(100)
-        setTimeout(() => {
+        setTimeout(async () => {
           setInstalling(false)
           setInstallSuccessMsg(`✅ ${targetName} instaladas com sucesso!`)
+          // Trigger immediate project re-analysis
           onRefresh()
           
           // OS Desktop Notification
           sendDesktopNotification(
             'EZZO Studio Dev',
-            `As dependências (${targetName}) foram instaladas e atualizadas no repositório!`
+            `As dependências (${targetName}) foram instaladas com sucesso no repositório!`
           )
-        }, 400)
+        }, 300)
       }
     } catch (err: any) {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current)

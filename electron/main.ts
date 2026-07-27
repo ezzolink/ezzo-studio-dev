@@ -866,21 +866,33 @@ ipcMain.handle('analyze-project', async (_e, rootPath: string) => {
 // Real npm install execution for Project Analytics
 ipcMain.handle('exec-npm-install', async (_e, rootPath: string, pkgName?: string) => {
   return new Promise((resolve) => {
-    const cmd = pkgName ? `npm install ${pkgName}@latest` : 'npm install'
-    const child = exec(cmd, { cwd: rootPath, env: process.env }, (error, stdout, stderr) => {
+    if (!rootPath || !fs.existsSync(rootPath)) {
+      resolve({ success: false, error: 'Diretório do projeto inválido' })
+      return
+    }
+
+    const isWin = process.platform === 'win32'
+    const command = isWin
+      ? (pkgName ? `npm.cmd install ${pkgName}@latest` : 'npm.cmd install')
+      : (pkgName ? `npm install ${pkgName}@latest` : 'npm install')
+
+    const child = exec(command, { cwd: rootPath, env: process.env, shell: true }, (error, stdout, stderr) => {
       if (error) {
-        resolve({ success: false, error: stderr || error.message })
+        resolve({ success: false, error: stderr || stdout || error.message })
       } else {
         resolve({ success: true, output: stdout })
       }
     })
 
-    child.stdout?.on('data', (data: string) => {
+    const sendToTerm = (chunk: string) => {
       const activeTabId = Array.from(ptyProcesses.keys())[0]
-      if (activeTabId && mainWindow) {
-        mainWindow.webContents.send(`terminal-output-${activeTabId}`, data)
+      if (activeTabId && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(`terminal-output-${activeTabId}`, chunk)
       }
-    })
+    }
+
+    child.stdout?.on('data', (data: string) => sendToTerm(data))
+    child.stderr?.on('data', (data: string) => sendToTerm(data))
   })
 })
 
