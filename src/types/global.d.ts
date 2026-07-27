@@ -39,6 +39,7 @@ declare global {
       // Extra
       openInVSCode?: (path: string) => void
       searchInFiles?: (root: string, query: string) => Promise<any>
+      saveImage?: (path: string, base64Data: string) => Promise<any>
 
       // Git
       gitBranch?: (root: string) => Promise<any>

@@ -50,6 +50,9 @@ declare global {
       // Open in VS Code
       openInVSCode: (filePath: string) => Promise<void>
 
+      // Save image binary
+      saveImage: (path: string, base64Data: string) => Promise<{ success: boolean } | { error: string }>
+
       // F3: analyze project
       analyzeProject: (path: string) => Promise<ProjectAnalysis>
     }

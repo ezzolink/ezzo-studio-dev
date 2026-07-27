@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Extra
   openInVSCode: (p: string) => ipcRenderer.send('open-in-vscode', p),
+  saveImage: (filePath: string, base64Data: string) => ipcRenderer.invoke('save-image', filePath, base64Data),
   searchInFiles: (root: string, query: string) => ipcRenderer.invoke('search-in-files', root, query),
 
   // Git

@@ -398,6 +398,17 @@ ipcMain.on('host-chat-send', (_e, data: { author: string; text: string }) => {
   ioServer?.emit('chat', data)
 })
 
+// ── Save Image (binary write from base64) ─────────────────────────────────────
+ipcMain.handle('save-image', async (_e, filePath: string, base64Data: string) => {
+  try {
+    const buf = Buffer.from(base64Data, 'base64')
+    fs.writeFileSync(filePath, buf)
+    return { success: true }
+  } catch (err: any) {
+    return { error: err.message ?? 'Failed to save image' }
+  }
+})
+
 // ── Terminal (node-pty) multi-terminal ────────────────────────────────────────
 ipcMain.handle('spawn-terminal', (_e, idOrCols: string | number, colsOrRows: number, rows?: number, shellType?: string) => {
   // Support legacy (cols, rows) and new (id, cols, rows, shellType) signatures
