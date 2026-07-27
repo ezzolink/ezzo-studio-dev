@@ -34,6 +34,14 @@ const ptyProcesses = new Map<string, ReturnType<typeof pty.spawn>>()
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
+function getIconPath(): string {
+  if (isDev) {
+    return path.join(__dirname, '../assets/icon.ico')
+  }
+  // In production, assets are copied to extraResources via electron-builder
+  return path.join(process.resourcesPath, 'assets/icon.ico')
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -43,7 +51,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    icon: path.join(__dirname, isDev ? '../assets/icon.ico' : '../../assets/icon.ico'),
+    icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -63,10 +71,11 @@ function createWindow() {
   })
 
   mainWindow.on('closed', () => {
-    mainWindow = null
-    stopServer()
+    // Kill all pty processes before nullifying mainWindow
     ptyProcesses.forEach(p => p.kill())
     ptyProcesses.clear()
+    mainWindow = null
+    stopServer()
   })
 }
 
@@ -412,15 +421,20 @@ ipcMain.handle('spawn-terminal', (_e, idOrCols: string | number, colsOrRows: num
   ptyProcesses.set(id, proc)
 
   proc.onData((data: string) => {
-    mainWindow?.webContents.send(`terminal-output-${id}`, data)
-    // Also send on legacy channel for 'default'
-    if (id === 'default') mainWindow?.webContents.send('terminal-output', data)
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send(`terminal-output-${id}`, data)
+      // Also send on legacy channel for 'default'
+      if (id === 'default') mainWindow.webContents.send('terminal-output', data)
+    }
   })
 
   proc.onExit(() => {
-    mainWindow?.webContents.send(`terminal-output-${id}`, '\r\n[Process exited]\r\n')
-    if (id === 'default') mainWindow?.webContents.send('terminal-output', '\r\n[Process exited]\r\n')
+    // Remove from map first to prevent further writes
     ptyProcesses.delete(id)
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send(`terminal-output-${id}`, '\r\n[Process exited]\r\n')
+      if (id === 'default') mainWindow.webContents.send('terminal-output', '\r\n[Process exited]\r\n')
+    }
   })
 
   return true
@@ -574,11 +588,11 @@ ipcMain.handle('git-pull', (_e, root: string) => {
 
 // ── Auto Update ───────────────────────────────────────────────────────────────
 const CURRENT_VERSION = app.getVersion() || '1.0.0'
-const UPDATE_URL = 'https://api.github.com/repos/ezzolink/ezzo-work-local/releases/latest'
+const UPDATE_URL = 'https://api.github.com/repos/ezzolink/ezzo-studio-dev/releases/latest'
 
 function httpsGet(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'EZZO-Work-Local' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'EZZO-Studio-Dev' } }, (res) => {
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => resolve(data))
@@ -626,7 +640,7 @@ ipcMain.handle('download-update', async (_e, url: string) => {
   function doDownload(downloadUrl: string, redirects = 0): Promise<{ ok: boolean; path?: string; error?: string }> {
     return new Promise((resolve) => {
       const file = fs.createWriteStream(tmpPath)
-      https.get(downloadUrl, { headers: { 'User-Agent': 'EZZO-Work-Local' } }, (res) => {
+      https.get(downloadUrl, { headers: { 'User-Agent': 'EZZO-Studio-Dev' } }, (res) => {
         if ((res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307 || res.statusCode === 308) && res.headers.location && redirects < 5) {
           file.close()
           fs.unlink(tmpPath, () => {})

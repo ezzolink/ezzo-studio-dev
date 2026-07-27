@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { IconClose, IconFile } from './Icons'
 import Breadcrumbs from './Breadcrumbs'
 import { useSettings } from '../hooks/useSettings'
@@ -498,7 +498,7 @@ function EditorPanel({
         <IconFile size={36} color="var(--text-muted)" />
         {isSplit
           ? <><div style={{ fontSize: 13 }}>Split Editor</div><div style={{ fontSize: 11 }}>Alt+click a file • right-click → Open in Split</div></>
-          : <><div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-secondary)' }}>EZZO Work Local</div><div style={{ fontSize: 13 }}>Open a folder and select a file to start editing</div></>
+          : <><div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-secondary)' }}>EZZO Studio Dev</div><div style={{ fontSize: 13 }}>Open a folder and select a file to start editing</div></>
         }
       </div>
     )
@@ -577,7 +577,7 @@ export default function Editor({ openedFiles, activeFile, onActivate, onClose, o
       return (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: 12 }}>
           <IconFile size={48} color="var(--text-muted)" />
-          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-secondary)' }}>EZZO Work Local</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-secondary)' }}>EZZO Studio Dev</div>
           <div style={{ fontSize: 13 }}>Open a folder and select a file to start editing</div>
         </div>
       )

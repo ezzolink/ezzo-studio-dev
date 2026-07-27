@@ -1,4 +1,4 @@
-# EZZO Work Local — Roadmap de Funcionalidades
+# EZZO Studio Dev — Roadmap de Funcionalidades
 
 > Documento criado em 24/06/2026  
 > Estado actual: v1.0 — Base funcional (Electron + React + TypeScript + Socket.io + CodeMirror + Xterm.js)
@@ -176,4 +176,4 @@ Depois **Fase 2** porque é o diferencial do EZZO vs outras ferramentas.
 
 ---
 
-*EZZO Work Local — Built with Electron + React + TypeScript + Socket.io*
+*EZZO Studio Dev — Built with Electron + React + TypeScript + Socket.io*

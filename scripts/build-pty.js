@@ -2,7 +2,7 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
-const ptyDir = path.join(__dirname, 'node_modules', 'node-pty')
+const ptyDir = path.join(__dirname, '..', 'node_modules', 'node-pty')
 
 // Get Electron version's Node headers
 const electronVersion = require(path.join(__dirname, '..', 'node_modules', 'electron', 'package.json')).version

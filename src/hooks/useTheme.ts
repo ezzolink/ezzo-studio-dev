@@ -35,6 +35,10 @@ function applyTheme(state: ThemeState) {
   const hover = state.accent + 'cc'
   r.style.setProperty('--accent-hover', hover)
   r.style.setProperty('--bg-active', state.accent + '26')
+
+  // Sidebar widths
+  r.style.setProperty('--sidebar-width', '280px')
+  r.style.setProperty('--right-sidebar-width', '360px')
 }
 
 export function useTheme() {

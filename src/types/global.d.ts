@@ -1,5 +1,3 @@
-import type { Socket } from 'socket.io-client'
-
 declare global {
   interface Window {
     api: {
@@ -9,21 +7,21 @@ declare global {
       close: () => void
 
       // File system
-      openFolder: () => Promise<string | null>
-      readDir: (path: string) => Promise<unknown>
-      readFile: (path: string) => Promise<string>
-      writeFile: (path: string, content: string) => Promise<boolean>
-      createFile: (path: string) => Promise<boolean>
-      createFolder: (path: string) => Promise<boolean>
-      rename: (oldPath: string, newPath: string) => Promise<boolean>
-      move: (src: string, dest: string) => Promise<boolean>
-      copy: (src: string, dest: string) => Promise<boolean>
-      delete: (path: string) => Promise<boolean>
-      getLocalIP: () => Promise<string>
+      openFolder: () => Promise<any>
+      readDir: (path: string) => Promise<any>
+      readFile: (path: string) => Promise<any>
+      writeFile: (path: string, content: string) => Promise<any>
+      createFile: (path: string) => Promise<any>
+      createFolder: (path: string) => Promise<any>
+      rename: (oldPath: string, newPath: string) => Promise<any>
+      move: (src: string, dest: string) => Promise<any>
+      copy: (src: string, dest: string) => Promise<any>
+      delete: (path: string) => Promise<any>
+      getLocalIP: () => Promise<any>
 
       // Server
-      startServer: (folderPath: string) => Promise<boolean>
-      stopServer: () => Promise<boolean>
+      startServer: (folderPath: string) => Promise<any>
+      stopServer: () => Promise<any>
       setPeerPermission: (peerId: string, perm: 'read-only' | 'read-write') => void
 
       // Events
@@ -32,54 +30,48 @@ declare global {
       onPeerDisconnected: (cb: (id: string) => void) => void
 
       // Terminal (multi-terminal)
-      spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number) => Promise<void>
+      spawnTerminal: (idOrCols: string | number, colsOrRows: number, rows?: number) => Promise<any>
       terminalInput: (idOrData: string, data?: string) => void
-      terminalResize: (idOrCols: string | number, colsOrRows: number, rows?: number) => Promise<void>
+      terminalResize: (idOrCols: string | number, colsOrRows: number, rows?: number) => Promise<any> | void
       onTerminalOutput: (idOrCb: string | ((data: string) => void), cb?: (data: string) => void) => void
-      killTerminal: (id: string) => void
+      killTerminal: (id?: string) => void
 
       // Extra
       openInVSCode?: (path: string) => void
-      searchInFiles?: (root: string, query: string) => Promise<{ file: string; line: number; text: string }[]>
+      searchInFiles?: (root: string, query: string) => Promise<any>
 
       // Git
-      gitBranch?: (root: string) => Promise<string | null>
-      gitStatus?: (root: string) => Promise<{ path: string; status: 'M' | 'A' | 'D' | '?' }[]>
-      gitCommit?: (root: string, message: string) => Promise<void>
-      gitLog?: (root: string) => Promise<{ hash: string; message: string; author: string; date: string }[]>
-      gitDiff?: (filePath: string) => Promise<{ added: number[]; modified: number[]; removed: number[] }>
-      gitPush?: (root: string, token: string) => Promise<{ ok: boolean; msg: string }>
-      gitPull?: (root: string) => Promise<{ ok: boolean; msg: string }>
+      gitBranch?: (root: string) => Promise<any>
+      gitStatus?: (root: string) => Promise<any>
+      gitCommit?: (root: string, message: string) => Promise<any>
+      gitLog?: (root: string) => Promise<any>
+      gitDiff?: (filePath: string) => Promise<any>
+      gitPush?: (root: string, token: string) => Promise<any>
+      gitPull?: (root: string) => Promise<any>
 
       // Drag & Drop external
-      copyExternal?: (src: string, dest: string) => Promise<boolean>
+      copyExternal?: (src: string, dest: string) => Promise<any>
 
       // Task Runner
-      getTasks?: (root: string) => Promise<{ source: string; name: string; command: string }[]>
+      getTasks?: (root: string) => Promise<any>
 
       // Open file at line
       openFileAtLine?: (path: string, line: number) => void
       onOpenFileAtLine?: (cb: (path: string, line: number) => void) => void
 
+      // Chat
       onChat?: (cb: (data: { author: string; text: string }) => void) => void
       hostChatSend?: (data: { author: string; text: string }) => void
-      checkUpdate?: () => Promise<{ hasUpdate: boolean; current: string; latest: string; notes: string; url: string; assets: { name: string; browser_download_url: string; size: number }[] }>
+
+      // Updates
+      checkUpdate?: () => Promise<any>
       openUpdateUrl?: (url: string) => void
-      downloadUpdate?: (url: string) => Promise<{ ok: boolean; path?: string; error?: string }>
-      installUpdate?: (exePath: string) => Promise<void>
+      downloadUpdate?: (url: string) => Promise<any>
+      installUpdate?: (exePath: string) => Promise<any> | void
       onUpdateProgress?: (cb: (pct: number) => void) => void
 
-      // F3: analyze project
-      analyzeProject?: (path: string) => Promise<{
-        totalFiles: number
-        totalDirs: number
-        totalBytes: number
-        totalLines: number
-        languages: { ext: string; lang: string; count: number; lines: number }[]
-        dependencies: Record<string, { name: string; version?: string }[]>
-        todos: { file: string; line: number; text: string }[]
-        recent: { path: string; mtime: number }[]
-      }>
+      // Project analysis
+      analyzeProject?: (path: string) => Promise<any>
     }
   }
 }

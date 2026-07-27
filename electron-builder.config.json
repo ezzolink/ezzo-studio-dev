@@ -1,6 +1,6 @@
 {
-  "appId": "com.ezzo.worklocal",
-  "productName": "EZZO Work Local",
+  "appId": "com.ezzo.studiodev",
+  "productName": "EZZO Studio Dev",
   "copyright": "© 2026 EZZO",
   "compression": "maximum",
   "directories": {
@@ -34,7 +34,7 @@
     "allowElevation": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "EZZO Work Local",
+    "shortcutName": "EZZO Studio Dev",
     "deleteAppDataOnUninstall": false,
     "runAfterFinish": true,
     "installerIcon": "assets/icon.ico",
@@ -49,8 +49,8 @@
   },
   "publish": {
     "provider": "github",
-    "owner": "ezzo",
-    "repo": "ezzo-work-local",
+    "owner": "ezzolink",
+    "repo": "ezzo-studio-dev",
     "releaseType": "release"
   }
 }

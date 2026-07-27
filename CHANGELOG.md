@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.6] - 2026-06-25
 
 ### Added
-- Initial release of EZZO Work Local
+- Initial release of EZZO Studio Dev
 - Electron + React + TypeScript + Socket.io + CodeMirror 6 + Xterm.js
 - File explorer, editor with tabs, terminal, settings panel
 - Auto-update via GitHub Releases

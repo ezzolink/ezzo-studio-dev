@@ -1,7 +1,7 @@
-# EZZO Work Local
+# EZZO Studio Dev
 
 <div align="center">
-  <img src="assets/logo-ezzo-work-local-dev.png" alt="EZZO Work Local" height="80" />
+  <img src="assets/icon-256.png" alt="EZZO Studio Dev" height="80" />
 
   <br />
   <br />
@@ -24,9 +24,9 @@
 
 ---
 
-## O que é o EZZO Work Local?
+## O que é o EZZO Studio Dev?
 
-O **EZZO Work Local** é um IDE desktop construído com Electron que permite a **colaboração em tempo real** entre vários programadores na mesma rede local. É a alternativa local ao VS Code Live Share — sem contas, sem servidores externos, sem latência de rede.
+O **EZZO Studio Dev** é um IDE desktop construído com Electron que permite a **colaboração em tempo real** entre vários programadores na mesma rede local. É a alternativa local ao VS Code Live Share — sem contas, sem servidores externos, sem latência de rede.
 
 Um membro da equipa abre uma pasta e torna-se o **Host**. Os restantes ligam-se via IP local e passam a ver e editar os mesmos ficheiros instantaneamente, com cursores partilhados, chat integrado e controlo de permissões.
 
@@ -103,7 +103,7 @@ Um membro da equipa abre uma pasta e torna-se o **Host**. Os restantes ligam-se 
 ## Arquitectura
 
 ```
-EZZO Work Local
+EZZO Studio Dev
 ├── Electron (Main Process)
 │   ├── Janela nativa sem frame (frameless window)
 │   ├── Sistema de ficheiros (readDir, readFile, writeFile, watchDir)
@@ -166,8 +166,8 @@ EZZO Work Local
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/ezzo/ezzo-work-local.git
-cd ezzo-work-local
+git clone https://github.com/ezzolink/ezzo-studio-dev.git
+cd ezzo-studio-dev
 ```
 
 ### 2. Instalar dependências
@@ -283,7 +283,7 @@ Todas as preferências são guardadas automaticamente em `localStorage`:
 
 ## Actualizações
 
-O EZZO Work Local verifica actualizações automaticamente no arranque. Quando há uma nova versão:
+O EZZO Studio Dev verifica actualizações automaticamente no arranque. Quando há uma nova versão:
 
 1. Um **ícone animado** aparece na barra de título
 2. Clica para abrir o modal de actualização com as notas de versão
@@ -296,7 +296,7 @@ Podes também verificar manualmente em **Settings › Updates**.
 ## Estrutura do Projecto
 
 ```
-ezzo-work-local/
+ezzo-studio-dev/
 ├── assets/                    # Logos e ícones
 ├── electron/
 │   ├── main.ts                # Processo principal Electron
@@ -378,4 +378,4 @@ chore:    build, dependências
 
 ## Licença
 
-MIT © 2026 EZZO Digital — [ezzo.dev](https://www.ezzo.gigital)
+MIT © 2026 EZZO Digital — [ezzo.dev](https://www.ezzo.digital)

@@ -123,6 +123,13 @@ function fileIconComponent(node: FileNode) {
   return <FileTypeIcon name={node.name} />
 }
 
+function isDirectoryEditing(node: FileNode, editingPeers?: Map<string, any[]>): boolean {
+  if (!editingPeers || editingPeers.size === 0) return false
+  if (node.type === 'file') return (editingPeers.get(node.path)?.length ?? 0) > 0
+  if (node.children) return node.children.some(child => isDirectoryEditing(child, editingPeers))
+  return false
+}
+
 function TreeNode({ node, depth, onFileOpen, onContext, onDragStart, onDrop, onFileOpenSplit, editingPeers }: {
   node: FileNode; depth: number
   onFileOpen: (n: FileNode) => void
@@ -174,19 +181,31 @@ function TreeNode({ node, depth, onFileOpen, onContext, onDragStart, onDrop, onF
         <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
           {node.name}
         </span>
-        {/* F2: editing-now indicator */}
+        {/* Live editing indicator */}
         {editing && editing.length > 0 && (
           <span
-            title={`${editing.map(e => e.peerName).join(', ')} editando agora`}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0, marginRight: 2 }}
+            title={`${editing.map(e => e.peerName).join(', ')} a editar este ficheiro`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
+              padding: '1px 5px', borderRadius: 8,
+              background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.25)',
+              fontSize: 10, color: 'var(--accent)', fontWeight: 600,
+            }}
           >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1.4s linear infinite', color: 'var(--accent)' }}>
-              <path d="M21 12a9 9 0 11-6.219-8.56" />
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
             {editing.map((e, i) => (
-              <span key={e.peerId + i} className="editing-dot" style={{ background: e.color }} />
+              <span key={e.peerId + i} style={{ width: 6, height: 6, borderRadius: '50%', background: e.color }} />
             ))}
           </span>
+        )}
+        {node.type === 'directory' && !expanded && isDirectoryEditing(node, editingPeers) && (
+          <span
+            title="Actividade de edição na pasta"
+            style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, opacity: 0.8 }}
+          />
         )}
         {node.remote && <span style={{ fontSize: 9, color: 'var(--warning)', flexShrink: 0, opacity: 0.8 }}>remote</span>}
       </div>

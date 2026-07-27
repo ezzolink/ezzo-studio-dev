@@ -45,6 +45,9 @@ export const IconConnect      = icon('M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7
 export const IconDisconnect   = icon('M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71M2 2l20 20')
 export const IconPeer         = icon('M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm8 4v6m3-3h-6')
 
+// ONDA Agent
+export const IconOnda = icon('M2 12c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6M2 18c0-5.5 4.5-10 10-10s10 4.5 10 10M22 12c0 3.3-2.7 6-6 6')
+
 // Editor / Terminal
 export const IconTerminal     = icon('M4 17l6-6-6-6M12 19h8')
 export const IconPreview      = icon('M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z')
@@ -59,3 +62,35 @@ export const IconDot = ({ size = 8, color = 'currentColor' }: IconProps) => (
     <circle cx="4" cy="4" r="4" fill={color} />
   </svg>
 )
+
+// Brand Logo Component - Vector rendered logo guaranteed to work anywhere
+export function EzzoLogo({ height = 22, showText = true, style }: { height?: number; showText?: boolean; style?: React.CSSProperties }) {
+  const iconSize = height * 1.15
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, userSelect: 'none', ...style }}>
+      <svg width={iconSize} height={height} viewBox="0 0 36 32" fill="none">
+        {/* Rounded blue gradient background */}
+        <rect x="1" y="1" width="34" height="30" rx="7" fill="url(#ezzo-brand-grad)" />
+        {/* Stylized Z — two parallel horizontal strokes connected by diagonal */}
+        <path d="M10 11H25" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+        <path d="M24 11L12 23" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+        <path d="M11 23H26" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+        {/* Glowing accent dot — upper right */}
+        <circle cx="28" cy="8" r="2.2" fill="#93c5fd" />
+        <circle cx="28" cy="8" r="1.2" fill="#ffffff" opacity="0.8" />
+        <defs>
+          <linearGradient id="ezzo-brand-grad" x1="0" y1="0" x2="36" y2="32" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#3b82f6" />
+            <stop offset="1" stopColor="#2563eb" />
+          </linearGradient>
+        </defs>
+      </svg>
+      {showText && (
+        <span style={{ fontWeight: 800, fontSize: height * 0.72, color: 'var(--text-primary)', letterSpacing: '-0.03em', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+          EZZO<span style={{ color: 'var(--accent)', fontWeight: 500, fontSize: '0.85em', marginLeft: 3 }}>Studio</span><span style={{ color: '#22c55e', fontWeight: 600, fontSize: '0.85em', marginLeft: 3 }}>Dev</span>
+        </span>
+      )}
+    </div>
+  )
+}
+

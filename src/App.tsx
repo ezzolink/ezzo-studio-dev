@@ -505,7 +505,7 @@ function TestingPanel({ rootPath, onRun }: { rootPath: string | null; onRun: (cm
 
   React.useEffect(() => {
     if (!rootPath) return
-    window.api.getTasks?.(rootPath).then(t => setTasks(t.filter(t => /test|spec|jest|vitest|mocha|cypress/.test(t.name))))
+    window.api.getTasks?.(rootPath).then((t: any) => setTasks(t.filter((item: { name: string }) => /test|spec|jest|vitest|mocha|cypress/.test(item.name))))
   }, [rootPath])
 
   return (

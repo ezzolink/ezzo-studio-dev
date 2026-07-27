@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useTheme } from '../hooks/useTheme'
 import { useUpdate } from '../hooks/useUpdate'
 import UpdateModal from './UpdateModal'
+import { IconOnda } from './Icons'
 
 const BUILD_DATE = '2026-07-22'
 
@@ -219,7 +220,7 @@ export default function ThemePanel() {
         <Section title="About">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>EZZO Work Local</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>EZZO Studio Dev</span>
               <span style={{
                 fontSize: 10, fontFamily: 'var(--font-mono)',
                 background: 'var(--bg-active)', color: 'var(--accent)',

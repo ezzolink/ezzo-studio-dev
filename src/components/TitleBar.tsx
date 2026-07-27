@@ -1,5 +1,5 @@
 import React from 'react'
-import { IconMinimize, IconMaximize, IconClose } from './Icons'
+import { IconMinimize, IconMaximize, IconClose, EzzoLogo } from './Icons'
 import type { UpdateInfo } from '../hooks/useUpdate'
 
 interface Props {
@@ -31,18 +31,13 @@ export default function TitleBar({ folderName, onOpenFolder, update, onShowUpdat
         WebkitAppRegion: 'no-drag',
         flexShrink: 0,
       } as React.CSSProperties}>
-        <img
-          src="/assets/ezzo-work-local-azul.png"
-          alt="EZZO"
-          style={{ height: 18, objectFit: 'contain' }}
-          draggable={false}
-        />
+        <EzzoLogo height={18} />
       </div>
 
       {/* Current folder name - centre */}
       <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 12, pointerEvents: 'none' }}>
         {folderName
-          ? <><span style={{ color: 'var(--text-muted)' }}>Work Local — </span>{folderName}</>
+          ? <><span style={{ color: 'var(--text-muted)' }}>Studio Dev — </span>{folderName}</>
           : <span style={{ color: 'var(--text-muted)' }}>No folder open</span>
         }
       </div>
